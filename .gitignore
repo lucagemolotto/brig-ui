@@ -2,3 +2,4 @@
 backend/target/
 frontend/target/
 frontend/dist/
+*.DS_Store
