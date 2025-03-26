@@ -25,6 +25,50 @@ struct DataPoint {
     epochtime: f64, 
 }
 
+#[derive(Debug, Deserialize)]
+struct RedEdgeStatus {
+    sd_gb_free: Option<f64>,
+    sd_gb_total: Option<f64>,
+    sd_gb_type: Option<String>,
+    sd_warn: Option<bool>,
+    sd_status: Option<String>,
+    bus_volts: Option<f64>,
+    gps_used_sats: Option<i32>,
+    gps_vis_sats: Option<i32>,
+    gps_warn: Option<bool>,
+    gps_lat: Option<f64>,
+    gps_lon: Option<f64>,
+    gps_type: Option<String>,
+    course: Option<f64>,
+    alt_agl: Option<f64>,
+    alt_msl: Option<f64>,
+    p_acc: Option<f64>,
+    utc_time: Option<String>,
+    vel_2d: Option<f64>,
+    sv_info: Option<Vec<SvInfo>>,
+    auto_cap_active: Option<bool>,
+    dls_status: Option<String>,
+    gps_time: Option<String>,
+    utc_time_valid: Option<bool>,
+    time_source: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SvInfo {
+    azimuth: Option<f64>,
+    channel: Option<i32>,
+    cno: Option<i32>,
+    diff_flag: Option<bool>,
+    elevation: Option<f64>,
+    orbit_info: Option<bool>,
+    orbit_is_eph: Option<bool>,
+    quality: Option<i32>,
+    sv_healthy: Option<bool>,
+    svid: Option<i32>,
+    used_flag: Option<bool>,
+}
+
+
 impl DataPoint {
     fn from_raw(time: &str, value: f64, field: &str) -> Option<Self> {
         if let Ok(dt) = time.parse::<DateTime<Utc>>() {
@@ -47,7 +91,7 @@ struct ServiceStatus {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct ServiceStatus {
+struct CameraSpace {
     cam1_free: f32,
     cam1_total: f32,
     cam2_free: f32,
@@ -197,26 +241,78 @@ async fn check_service_status(service: &str) -> Result<bool, String> {
 }
 
 // queries systemctl for idronaut and camera_capture services
-async fn status_call() -> Result<Json<ServiceStatus>, StatusCode> {
-    let idronaut_status = check_service_status("IDRONAUT").await.map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
-    let camera_capture_status = check_service_status("camera_capture").await.map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
+async fn camera_status_call() -> Result<Json<CameraSpace>, StatusCode> {
+    let client = Client::new();
+    
+    let cam1_fr = 0.0;
+    let cam1_tot = 0.0;
+    let cam2_fr = 0.0;
+    let cam2_tot = 0.0;
 
     // camera 1 (red)
     match client.get("http://192.168.1.83:80/status").send().await {
-        Ok(response) => match response.json::<Vec<DataPoint>>().await {
-            Ok(data) => res = data,
-            Err(_) => res = vec![],
+        Ok(response) => match response.json::<RedEdgeStatus>().await {
+            Ok(data) => {
+                cam1_fr = data.sd_gb_free;
+                cam1_tot = data.sd_gb_total;
+            },
+            Err(_) => ,
         },
-        Err(_) => res = vec![],
+        Err(_) => ,
     }
-    let status = CamStatus {
-        cam1_free: idronaut_status,
-        cam1_total: ,
-        cam2_free: ,
-        cam2_total: ,
+
+    // camera 2 (blue)
+    match client.get("http://192.168.3.83:80/status").send().await {
+        Ok(response) => match response.json::<RedEdgeStatus>().await {
+            Ok(data) => {
+                cam2_fr = data.sd_gb_free;
+                cam2_tot = data.sd_gb_total;
+            },
+            Err(_) => ,
+        },
+        Err(_) => ,
+    }
+    let status = CameraSpace {
+        cam1_free: cam1_fr,
+        cam1_total: cam1_tot,
+        cam2_free: cam2_fr,
+        cam2_total: cam2_tot,
     };
     
     Ok(Json(status))
+}
+
+#[derive(Serialize)]
+struct ReformatRequest {
+    erase_all_data: bool,
+}
+#[derive(Serialize)]
+struct ReformatResponse {
+    erase_all_data: bool,
+}
+
+pub async fn format_sd(host: &str) -> Result<Json<ReformatResponse>, StatusCode> {
+    
+    let mut url = "";
+    if host == "cam1" {
+        url = "http://192.168.1.83/reformatsdcard";
+    } else if host == "cam2" {
+        url = "http://192.168.3.83/reformatsdcard";
+    }
+
+    let client = Client::new();
+
+    let request_body = ReformatRequest {
+        erase_all_data: true,
+    };
+
+    let response = client
+        .post(&url)
+        .json(&request_body)
+        .send()
+        .await?;
+
+    Ok(Json(response))
 }
 
 async fn status_call() -> Result<Json<ServiceStatus>, StatusCode> {
@@ -239,6 +335,8 @@ async fn main() {
     let app = Router::new()
         .route("/api/data", get(query_data))
         .route("/api/status", get(status_call))
+        .route("/api/camera_status", get(camera_status_call))
+        .route("/api/reformat/:host", get(status_call))
         .route("/api/:service/:action", post(service_call))
         .layer(CorsLayer::new().allow_origin(Any)); // needed for cors policy
 
