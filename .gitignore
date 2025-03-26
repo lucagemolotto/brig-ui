@@ -1,0 +1,4 @@
+*.tar
+backend/target/
+frontend/target/
+frontend/dist/

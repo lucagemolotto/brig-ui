@@ -1,0 +1,131 @@
+header {
+    background-color: #fff;
+    border-bottom: 1px solid #fc7089;
+    font-size: 100%;
+    padding: 0.5em 1em;
+    display: flex;
+    flex-flow: row wrap;
+    gap: 0.5em;
+    justify-content: space-between;
+    align-items: end;
+}
+
+header>* {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 0.5em;
+    justify-content: space-between;
+}
+
+header>h2 {
+    margin: 0 3em 0 0;
+    font-size: 100%;
+    /* Remove styled heading */
+    background-color: inherit;
+    border: none;
+    padding: 0;
+}
+
+header p {
+    margin: 0;
+}
+
+header>nav>p {
+    margin: 0 1em;
+}
+
+header a {
+    padding: 0.2em 0;
+}
+
+h1>a,
+h2>a,
+h3>a,
+h4>a,
+h5>a,
+h6>a,
+header a,
+.always-underline {
+    text-decoration: none;
+    color: #222;
+}
+
+h1>a:hover,
+h2>a:hover,
+h3>a:hover,
+h4>a:hover,
+h5>a:hover,
+h6>a:hover,
+header a:hover,
+.always-underline {
+    text-decoration: underline;
+    text-decoration-color: #fc7089;
+    text-decoration-thickness: 0.3em;
+    text-underline-position: under;
+}
+
+.always-underline {
+    width: fit-content;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    justify-content: center;
+    padding: 20px;
+}
+
+.chart-container {
+    width: 100%;
+    min-width: 300px; 
+}
+
+.status-container {
+    text-align: center;
+    padding: 20px;
+}
+
+.status-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    max-width: 300px;
+    margin: auto;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.start {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.stop {
+    background-color: #D32F2F;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+.service-monitor {
+    text-align: center;
+    padding: 20px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.status-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 1.2rem;
+}
