@@ -1,4 +1,0 @@
-[Unit]
-Description=Main Boat target for services
-Requires=default.target
-After=default.target
