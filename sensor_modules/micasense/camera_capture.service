@@ -1,0 +1,28 @@
+# Micasense dual camera capture
+[Unit]
+Description=Micasense dual camera capture
+
+# The GPS service is required to get updated date.
+# InfluxDB is required to store camera data.
+Requires=docker_influxdb.service gps.service
+After=multi-user.target docker_influxdb.service gps.service
+
+# Try to execute the service again, for 3 times.
+# Otherwise declare a failure.
+StartLimitIntervalSec=60s
+StartLimitBurst=3
+
+PartOf=boat.target
+
+[Service]
+Type=exec
+User=pi
+
+WorkingDirectory=/home/pi/micasense
+ExecStart=/usr/bin/python3 /home/pi/micasense/main.py camera_capture/camera_capture.py
+
+# Keep the service alive even in case of failure.
+Restart=on-failure
+
+[Install]
+WantedBy=boat.target

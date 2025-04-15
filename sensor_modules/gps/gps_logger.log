@@ -1,0 +1,57 @@
+2025-03-07 13:59:33 Kendau GPS serial:INFO: Opening connection
+2025-03-07 13:59:34 depthmeter_debug:INFO: System datetime updated
+2025-03-07 13:59:42 Kendau GPS serial:INFO: Closing connection
+2025-03-07 14:00:28 Kendau GPS serial:INFO: Opening connection
+2025-03-07 14:00:30 depthmeter_debug:INFO: System datetime updated
+2025-03-07 14:00:31 Kendau GPS serial:INFO: Closing connection
+2025-03-07 14:00:39 Kendau GPS serial:INFO: Opening connection
+2025-03-07 14:00:40 depthmeter_debug:INFO: System datetime updated
+2025-03-06 19:13:45 Kendau GPS serial:INFO: Opening connection
+2025-03-17 10:26:46 depthmeter_debug:INFO: System datetime updated
+2025-03-06 22:40:58 Kendau GPS serial:INFO: Opening connection
+2025-03-25 17:01:01 depthmeter_debug:INFO: System datetime updated
+2025-03-06 22:27:44 Kendau GPS serial:INFO: Opening connection
+2025-03-26 10:06:31 depthmeter_debug:INFO: System datetime updated
+2025-03-26 10:18:58 Kendau GPS serial:INFO: Opening connection
+2025-03-27 07:57:41 depthmeter_debug:INFO: System datetime updated
+2025-03-26 10:26:00 Kendau GPS serial:INFO: Opening connection
+2025-03-27 08:33:48 depthmeter_debug:INFO: System datetime updated
+2025-03-26 10:24:39 Kendau GPS serial:INFO: Opening connection
+2025-03-27 10:17:43 depthmeter_debug:INFO: System datetime updated
+2025-03-27 12:18:52 Kendau GPS serial:INFO: Opening connection
+2025-04-02 07:24:37 depthmeter_debug:INFO: System datetime updated
+2025-04-02 08:19:58 Kendau GPS serial:INFO: Opening connection
+2025-04-02 08:25:50 depthmeter_debug:INFO: System datetime updated
+2025-04-02 08:19:18 Kendau GPS serial:INFO: Opening connection
+2025-04-02 08:33:41 depthmeter_debug:INFO: System datetime updated
+2025-04-02 09:26:07 Kendau GPS serial:INFO: Opening connection
+2025-04-02 12:00:41 depthmeter_debug:INFO: System datetime updated
+2025-04-02 14:21:04 Kendau GPS serial:INFO: Opening connection
+2025-04-02 15:03:13 depthmeter_debug:INFO: System datetime updated
+2025-04-02 15:18:42 Kendau GPS serial:INFO: Opening connection
+2025-04-02 15:44:25 depthmeter_debug:INFO: System datetime updated
+2025-04-02 15:19:32 Kendau GPS serial:INFO: Opening connection
+2025-04-03 12:44:46 depthmeter_debug:INFO: System datetime updated
+2025-04-02 15:19:27 Kendau GPS serial:INFO: Opening connection
+2025-04-03 13:10:36 depthmeter_debug:INFO: System datetime updated
+2025-04-03 13:22:39 Kendau GPS serial:INFO: Opening connection
+2025-04-03 14:50:42 depthmeter_debug:INFO: System datetime updated
+2025-04-03 13:20:33 Kendau GPS serial:INFO: Opening connection
+2025-04-04 10:22:33 depthmeter_debug:INFO: System datetime updated
+2025-04-03 13:21:16 Kendau GPS serial:INFO: Opening connection
+2025-04-04 12:22:25 depthmeter_debug:INFO: System datetime updated
+2025-04-04 12:23:40 depthmeter_debug:WARNING: Sentence '$GNRMC,122336.000,A,4604.9610,N,01312.9371,E,0.79,348.52,04042' is corrupted. NMEA checksum verification failed.
+2025-04-03 13:46:28 Kendau GPS serial:INFO: Opening connection
+2025-04-04 13:13:47 depthmeter_debug:INFO: System datetime updated
+2025-04-04 13:18:07 Kendau GPS serial:INFO: Opening connection
+2025-04-04 13:29:17 depthmeter_debug:INFO: System datetime updated
+2025-04-04 13:18:23 Kendau GPS serial:INFO: Opening connection
+2025-04-04 13:23:57 Kendau GPS serial:INFO: Opening connection
+2025-04-04 13:19:16 Kendau GPS serial:INFO: Opening connection
+2025-04-08 10:13:49 depthmeter_debug:INFO: System datetime updated
+2025-04-08 10:17:56 Kendau GPS serial:INFO: Opening connection
+2025-04-08 10:25:34 depthmeter_debug:INFO: System datetime updated
+2025-04-08 10:23:27 Kendau GPS serial:INFO: Opening connection
+2025-04-09 07:42:50 depthmeter_debug:INFO: System datetime updated
+2025-04-09 09:21:57 Kendau GPS serial:INFO: Opening connection
+2025-04-10 12:49:46 depthmeter_debug:INFO: System datetime updated
