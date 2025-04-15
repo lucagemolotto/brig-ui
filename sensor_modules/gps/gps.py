@@ -281,7 +281,7 @@ class GPS:
                 float(cog),
             )
 
-            data = myPing.get_distance()
+            data = self.ping_sonar.get_distance()
             if data:
                 self.ping_data = data["distance"]
             else:
@@ -317,14 +317,13 @@ class GPS:
         try:
             p = influxdb_client.Point(
                 "gps_data2"
-            )  # .field("datetime", self.gps_data[0])
-            p = p.field("latitude", self.gps_data[1]).field(
-                "latitude_dir", self.gps_data[2]
-            )
-            p = p.field("longitude", self.gps_data[3]).field(
-                "longitude_field", self.gps_data[4]
-            )
-            p = p.field("sog", self.gps_data[5]).field("cog", self.gps_data[6])
+            ).field("latitude", self.gps_data[1]
+            ).field("latitude_dir", self.gps_data[2]
+            ).field("longitude", self.gps_data[3]
+            ).field("longitude_field", self.gps_data[4]
+            ).field("sog", self.gps_data[5]
+            ).field("cog", self.gps_data[6]
+            ).field("depth", self.ping_data/1000)
             self.write_api.write(bucket="asv_data", org=self.influx_org, record=p)
             return True
         except (ConnectionResetError, OSError, urllib3.exceptions.ProtocolError, urllib3.exceptions.NewConnectionError) as ex:
