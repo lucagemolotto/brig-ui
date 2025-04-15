@@ -1,0 +1,30 @@
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_2.tif fails with error 404
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_1.tif fails with error 404
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_3.tif fails with error 404
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_4.tif fails with error 404
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_5.tif fails with error 404
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_2.tif. Check if camera is active and connected.
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_2.tif'
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_1.tif. Check if camera is active and connected.
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_3.tif. Check if camera is active and connected.
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_4.tif. Check if camera is active and connected.
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_5.tif. Check if camera is active and connected.
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_1.tif'
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_3.tif'
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_4.tif'
+2025-03-06 14:54:27 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_5.tif'
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_1.tif fails with error 404
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_2.tif fails with error 404
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_3.tif fails with error 404
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_4.tif fails with error 404
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Request http://192.168.1.83:80/files/0040SET/009/IMG_1820_5.tif fails with error 404
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_1.tif. Check if camera is active and connected.
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_2.tif. Check if camera is active and connected.
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_1.tif'
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_2.tif'
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_3.tif. Check if camera is active and connected.
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_4.tif. Check if camera is active and connected.
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_3.tif'
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_4.tif'
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to connect to http://192.168.10.254/files/0040SET/009/IMG_1820_5.tif. Check if camera is active and connected.
+2025-03-06 14:54:45 camera.cam1.debug:ERROR: Failed to get image 'http://192.168.1.83:80/files/0040SET/009/IMG_1820_5.tif'
