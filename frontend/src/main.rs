@@ -16,7 +16,9 @@ use wasm_logger::*;
 use web_sys::console;
 use tracing::info;
 use log::*;
+use const_format::concatcp;  
 
+mod camera;
 #[derive(Deserialize, Clone, Debug)]
 struct DataPoint {
     time: String,
@@ -32,6 +34,7 @@ struct ServiceStatus {
     camera_capture: bool,
 }
 
+const BASEURL: &'static str = "http://192.168.2.9:3000";
 
 //#[tokio::main]
 fn main() {
@@ -51,6 +54,7 @@ fn App() -> impl IntoView {
                     <Route path=path!("/") view=Home/>
                     <Route path=path!("/Charts/") view=Home/>
                     <Route path=path!("/Status/") view=Status/>
+                    <Route path=path!("/Cameras/") view=camera::CameraPage/>
                 </Routes>
             </main>
         </Router>
@@ -73,7 +77,7 @@ async fn load_data(client: Client) -> Vec<DataPoint> {
     //                 }},
     //     Err(e) => {info!("Error in retrieving url: {:?}", e); res = vec![]},
     // }
-    match client.get("http://192.168.2.9:3000/api/data").send().await {
+    match client.get(concatcp!(BASEURL, "/api/data")).send().await {
         Ok(response) => match response.json::<Vec<DataPoint>>().await {
             Ok(data) => res = data,
             Err(_) => res = vec![],
@@ -94,7 +98,10 @@ async fn service_request(client: Client, name: &str, action: &str) -> () {
 
     //     Err(e) => log::info!("Error retrieving env variable: {:?}", e),
     // }
-    let url = format!("http://192.168.2.9:3000/api/{}/{}", name, action);
+    let addr = format!("/api/{}/{}", name, action).to_owned();
+    let mut url : String = "".to_owned();
+    url.push_str(BASEURL);
+    url.push_str(&addr);
     match client.post(url).send().await {
         Ok(response) => {
             if response.status().is_success() {
@@ -280,7 +287,7 @@ fn ServiceMonitor() -> impl IntoView {
 
     //     Err(e) => log::info!("Error retrieving env variable: {:?}", e),
     // }
-    let url = format!("http://192.168.2.9:3000/api/status");
+    let url = concatcp!(BASEURL, "/api/status");
 
     // dynamic resource
     let status_resource = LocalResource::new(move || {
@@ -370,6 +377,7 @@ fn SiteHeader() -> impl IntoView {
             <nav>
                 <p><A href="/Charts/">"Charts"</A></p>
                 <p><A href="/Status/">"Status"</A></p>
+                <p><A href="/Cameras/">"Cameras"</A></p>
             </nav>
         </header>
     }
