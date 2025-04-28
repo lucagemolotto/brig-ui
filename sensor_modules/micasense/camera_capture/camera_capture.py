@@ -391,9 +391,7 @@ class CameraArray:
         return captures
 
     def send_to_influx(self, source_camera: str, image_paths: list[str]) -> None:
-        p = influxdb_client.Point("micasense_data").field("camera", source_camera)
-        for i in range(len(image_paths)):
-            p = p.tag("path_" + str(i + 1), image_paths[i])
+        p = influxdb_client.Point("micasense_data").field("capture", image_paths[0]).tag("camera", source_camera)
         self.write_api.write(bucket="asv_data", org=self.influx_org, record=p)
 
 

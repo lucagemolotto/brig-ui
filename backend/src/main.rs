@@ -1,6 +1,9 @@
+use axum::extract::Query;
+use axum::http::Method;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
+use std::collections::HashSet;
+use std::{collections::HashMap, net::SocketAddr};
 use std::process::Command;
 use tracing::info;
 use axum::{
@@ -13,7 +16,7 @@ use axum::{
 };
 use csv::ReaderBuilder;
 use std::io::Cursor;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use tower_http::cors::{CorsLayer, Any};
 use tokio::task;
 
@@ -23,6 +26,17 @@ struct DataPoint {
     field: String,
     value: f64,
     epochtime: f64, 
+}
+#[derive(Debug, Deserialize)]
+
+struct CameraFile {
+    name: String,
+    size: i32,
+}
+#[derive(Debug, Deserialize)]
+struct CameraFiles {
+    files: Vec<CameraFile>,
+    directories: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -92,10 +106,10 @@ struct ServiceStatus {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct CameraSpace {
-    cam1_free: f32,
-    cam1_total: f32,
-    cam2_free: f32,
-    cam2_total: f32,
+    cam1_free: f64,
+    cam1_total: f64,
+    cam2_free: f64,
+    cam2_total: f64,
 }
 
 // queries influxdb for idronaut data
@@ -242,35 +256,47 @@ async fn check_service_status(service: &str) -> Result<bool, String> {
 
 // queries systemctl for idronaut and camera_capture services
 async fn camera_status_call() -> Result<Json<CameraSpace>, StatusCode> {
-    let client = Client::new();
+    let client: Client = Client::new();
     
-    let cam1_fr = 0.0;
-    let cam1_tot = 0.0;
-    let cam2_fr = 0.0;
-    let cam2_tot = 0.0;
+    let mut cam1_fr = 0.0;
+    let mut cam1_tot = 0.0;
+    let mut cam2_fr = 0.0;
+    let mut cam2_tot = 0.0;
 
     // camera 1 (red)
     match client.get("http://192.168.1.83:80/status").send().await {
         Ok(response) => match response.json::<RedEdgeStatus>().await {
             Ok(data) => {
-                cam1_fr = data.sd_gb_free;
-                cam1_tot = data.sd_gb_total;
+                cam1_fr = data.sd_gb_free.unwrap();
+                cam1_tot = data.sd_gb_total.unwrap();
             },
-            Err(_) => ,
+            Err(_) => {
+                cam1_fr = -1.0;
+                cam1_tot =-1.0;
+            },
         },
-        Err(_) => ,
+        Err(_) => {
+            cam1_fr = -1.0;
+            cam1_tot =-1.0;
+        },
     }
 
     // camera 2 (blue)
     match client.get("http://192.168.3.83:80/status").send().await {
         Ok(response) => match response.json::<RedEdgeStatus>().await {
             Ok(data) => {
-                cam2_fr = data.sd_gb_free;
-                cam2_tot = data.sd_gb_total;
+                cam2_fr = data.sd_gb_free.unwrap();
+                cam2_tot = data.sd_gb_total.unwrap();
             },
-            Err(_) => ,
+            Err(_) => {
+                cam2_fr = -1.0;
+                cam2_tot =-1.0;
+            },
         },
-        Err(_) => ,
+        Err(_) => {
+            cam2_fr = -1.0;
+            cam2_tot =-1.0;
+        },
     }
     let status = CameraSpace {
         cam1_free: cam1_fr,
@@ -291,29 +317,29 @@ struct ReformatResponse {
     erase_all_data: bool,
 }
 
-pub async fn format_sd(host: &str) -> Result<Json<ReformatResponse>, StatusCode> {
+// pub async fn format_sd(host: &str) -> Result<Json<ReformatResponse>, StatusCode> {
     
-    let mut url = "";
-    if host == "cam1" {
-        url = "http://192.168.1.83/reformatsdcard";
-    } else if host == "cam2" {
-        url = "http://192.168.3.83/reformatsdcard";
-    }
+//     let mut url = "";
+//     if host == "cam1" {
+//         url = "http://192.168.1.83/reformatsdcard";
+//     } else if host == "cam2" {
+//         url = "http://192.168.3.83/reformatsdcard";
+//     }
 
-    let client = Client::new();
+//     let client = Client::new();
 
-    let request_body = ReformatRequest {
-        erase_all_data: true,
-    };
+//     let request_body = ReformatRequest {
+//         erase_all_data: true,
+//     };
 
-    let response = client
-        .post(&url)
-        .json(&request_body)
-        .send()
-        .await?;
+//     let response = client
+//         .post(url)
+//         .json(&request_body)
+//         .send()
+//         .await?;
 
-    Ok(Json(response))
-}
+//     Ok(Json(response))
+// }
 
 async fn status_call() -> Result<Json<ServiceStatus>, StatusCode> {
     let idronaut_status = check_service_status("IDRONAUT").await.map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -325,6 +351,179 @@ async fn status_call() -> Result<Json<ServiceStatus>, StatusCode> {
     };
     
     Ok(Json(status))
+
+}
+fn extract_set_info(tag: &str) -> Option<String> {
+    // Extract /SETXXXX/YYY from files/SETXXXX/YYY/IMG_ZZZZ.tif
+    let parts: Vec<&str> = tag.split('/').collect();
+    if parts.len() >= 3 {
+        // Return the SET and directory part (/SETXXXX/YYY)
+        return Some(format!("{}/{}", parts[2], parts[3]));
+    }
+    None
+}
+
+#[derive(Deserialize)]
+struct CameraFoldersParams {
+    camera: String,
+    date: String,
+}
+
+async fn camera_folders_call(Query(params): Query<CameraFoldersParams>) -> Result<Json<Vec<String>>, StatusCode> {
+    let camera = params.camera;
+    let req_date = params.date;
+    
+    // Format the date strings for the Flux query
+    let start_time = format!("{}T00:00:00Z", req_date);
+    let end_time = format!("{}T23:59:59Z", req_date);
+
+    let host = "http://localhost:8086"; // InfluxDB v2 server
+    let org = "SailingLab";
+    let token="ijL6ry3VP0Hm5nAvP-wvHouC1l3ysIWty-VWCPgF7Bz-aKt-4Oi9zFMV_t8UkVnQSVwdxlRpdKjbAuPxx9umsA==";
+
+    // Build the Flux query
+    let flux_query = format!(
+        r#"from(bucket: "asv_data")
+          |> range(start: {}, stop: {})
+          |> filter(fn: (r) => r._measurement == "micasense_data")
+          |> filter(fn: (r) => r._field == "capture")
+          |> filter(fn: (r) => r.camera == "{}")"#,
+        start_time, end_time, camera
+    );
+
+
+    let client = Client::new();
+    let query_result = client
+        .post(format!("{}/api/v2/query?org={}", host, org))
+        .header("Authorization", format!("Token {}", token))
+        .header("Accept", "application/csv")
+        .header("Content-Type", "application/vnd.flux")
+        .body(flux_query)
+        .send()
+        .await
+        .map_err(|e| {
+            info!("Request error: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    
+    let response_text = query_result.text().await.map_err(|e| {
+        info!("Response text error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    println!("Raw CSV Response:\n{}", response_text);
+    let mut data_points = Vec::new();
+    let mut reader = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(Cursor::new(response_text));
+
+        for result in reader.records() {
+            if let Ok(record) = result {
+                if let Some(set) = record.get(6) {
+                    if let Some(info) = extract_set_info(set) {
+                        data_points.push(info);
+                    } else {
+                        println!("No set info could be extracted from: {}", set);
+                    }
+                }
+            }
+        }
+    let unique_data_points: Vec<String> = data_points.into_iter().collect::<HashSet<_>>().into_iter().collect();
+    println!("Sent data:\n{:?}", unique_data_points);
+    Ok(Json(unique_data_points))
+
+}
+
+#[derive(Deserialize)]
+struct ImageDataParams {
+    camera: String,
+    date: String,
+    set: String,
+    folder: String,
+    img_num: String,
+}
+async fn image_data_call(Query(params): Query<ImageDataParams>) -> Result<Json<Vec<DataPoint>>, StatusCode> {
+    let file = format!("/files/{}/{}/IMG_{}_1.tif", params.set, params.folder, params.img_num);
+    let host = "http://localhost:8086"; // InfluxDB v2 server
+    let org = "SailingLab";
+    let token="ijL6ry3VP0Hm5nAvP-wvHouC1l3ysIWty-VWCPgF7Bz-aKt-4Oi9zFMV_t8UkVnQSVwdxlRpdKjbAuPxx9umsA==";
+    let flux_query1 = format!(
+        r#"from(bucket: "asv_data")
+            |> range(start: {}T00:00:00Z, stop: {}T23:59:59Z)  // Replace with your date
+            |> filter(fn: (r) => r._measurement == "micasense_data")
+            |> filter(fn: (r) => r._field == "capture")
+            |> filter(fn: (r) => r.camera == "{}")
+            |> filter(fn: (r) => r._value == "{}")
+            |> keep(columns: ["_time"])"#,
+            params.date, params.date, params.camera, file
+    );
+    println!("Query 1:\n{}", flux_query1);
+    let client = Client::new();
+    let query_result1 = client
+        .post(format!("{}/api/v2/query?org={}", host, org))
+        .header("Authorization", format!("Token {}", token))
+        .header("Accept", "application/csv")
+        .header("Content-Type", "application/vnd.flux")
+        .body(flux_query1)
+        .send()
+        .await
+        .map_err(|e| {
+            info!("Request error: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    
+    let response_text1 = query_result1.text().await.map_err(|e| {
+        info!("Response text error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    println!("Raw CSV Response:\n{}", response_text1.clone());
+    let mut timestamp = String::new();
+    let mut reader = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(Cursor::new(response_text1));
+        for result in reader.records() {
+            println!("Result:\n{:?}", result);
+            if let Ok(record) = result {
+                if let (Some(time)) = (record.get(3)) { // 5 -> timestamp, 6..11 -> sensors
+                    timestamp = time.to_string();
+                }
+            }
+        }
+
+    let flux_query2 = format!(
+        r#"import "experimental"
+from(bucket: "asv_data")
+            |> range(start: experimental.addDuration(d: -5s, to: {}), stop: experimental.addDuration(d: 5s, to: {})) 
+            |> filter(fn: (r) => r._measurement == "idronaut_data")
+            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+            |> elapsed(unit: 1ns)
+            |> sort(columns: ["elapsed"], desc: false)
+            |> limit(n: 1)"#,
+            timestamp, timestamp
+    );
+
+    println!("Query 2:\n{}", flux_query2);
+    let query_result2 = client
+        .post(format!("{}/api/v2/query?org={}", host, org))
+        .header("Authorization", format!("Token {}", token))
+        .header("Accept", "application/csv")
+        .header("Content-Type", "application/vnd.flux")
+        .body(flux_query2)
+        .send()
+        .await
+        .map_err(|e| {
+            info!("Request error: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let response_text2 = query_result2.text().await.map_err(|e| {
+        info!("Response text error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    println!("Raw CSV Response:\n{}", response_text2);
+    let datapoints : Vec<DataPoint> = Vec::new();
+    Ok(Json(datapoints))
 }
 
 #[tokio::main]
@@ -336,9 +535,16 @@ async fn main() {
         .route("/api/data", get(query_data))
         .route("/api/status", get(status_call))
         .route("/api/camera_status", get(camera_status_call))
+        .route("/api/camera_folders", get(camera_folders_call))
+        .route("/api/image_data", get(image_data_call))
         .route("/api/reformat/:host", get(status_call))
         .route("/api/:service/:action", post(service_call))
-        .layer(CorsLayer::new().allow_origin(Any)); // needed for cors policy
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+                .allow_headers(Any)
+        );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("Server running on {}", addr);
