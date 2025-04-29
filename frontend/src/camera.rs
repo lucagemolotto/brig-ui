@@ -22,7 +22,7 @@ pub fn CameraPage() -> impl IntoView {
     let selected_set = RwSignal::new(String::new());
     let selected_folder = RwSignal::new(String::new());
     let image_num = RwSignal::new(String::from("0001"));
-    let image_data = RwSignal::new(None::<ImageData>);
+    let image_data = RwSignal::new(None::<ImageDataPoint>);
     let status_message = RwSignal::new(String::new());
 
     // Fetch sets and folders based on date
@@ -113,12 +113,12 @@ pub fn CameraPage() -> impl IntoView {
             match cl.get(&url).send().await {
                 Ok(res) => {
                     if res.status().is_success() {
-                        match res.json::<ImageData>().await {
+                        match res.json::<ImageDataPoint>().await {
                             Ok(data) => {
                                 status_message.set("Image data loaded successfully.".to_string());
                                 image_data.set(Some(data));
                             },
-                            Err(_) => status_message.set("Failed to parse image data from server.".to_string())
+                            Err(e) => status_message.set("Failed to parse image data from server. ".to_string() + &e.to_string())
                         }
                     } else {
                         status_message.set(format!("Server error: {}", res.status()));
@@ -280,8 +280,21 @@ pub fn CameraPage() -> impl IntoView {
 
             {move || image_data.get().map(|data| view! {
                 <div class="image-meta">
-                    <p><strong>"Timestamp: "</strong>{data.timestamp.clone()}</p>
+                    <p><strong>"Timestamp: "</strong>{data.date.clone()}</p>
+                    <p><strong>"GPS data"</strong></p>
+                    <p><strong>"Latitude: "</strong>{data.lat}</p>
+                    <p><strong>"Longitude: "</strong>{data.lon}</p>
+                    <p><strong>"Cog: "</strong>{data.cog}</p>
+                    <p><strong>"Sog: "</strong>{data.sog}</p>
+                    <p><strong>"Depth: "</strong>{data.depth}</p>
+                    <p><strong>"CTD data"</strong></p>
+                    <p><strong>"Conductivity: "</strong>{data.conductivity}</p>
+                    <p><strong>"Oxygen Percentage: "</strong>{data.oxygen_percentage}</p>
+                    <p><strong>"Oxygen PPM: "</strong>{data.oxygen_ppm}</p>
                     <p><strong>"pH: "</strong>{data.ph}</p>
+                    <p><strong>"Pressure: "</strong>{data.pressure}</p>
+                    <p><strong>"Salinity: "</strong>{data.salinity}</p>
+                    <p><strong>"Temperature: "</strong>{data.temperature}</p>
                 </div>
             })}
         </div>
@@ -290,8 +303,18 @@ pub fn CameraPage() -> impl IntoView {
 
 // Example struct returned by your backend
 #[derive(Debug, Clone, serde::Deserialize)]
-struct ImageData {
-    timestamp: String,
-    ph: f32,
-    // Add other fields as needed
+struct ImageDataPoint{
+    date: String,
+    lat: f64,
+    lon: f64,
+    cog: f64,
+    sog: f64,
+    conductivity: f64,
+    depth: f64,
+    oxygen_percentage: f64,
+    oxygen_ppm: f64,
+    ph: f64,
+    pressure: f64,
+    salinity: f64,
+    temperature: f64,
 }

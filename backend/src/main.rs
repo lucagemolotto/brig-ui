@@ -1,7 +1,8 @@
 use axum::extract::Query;
-use axum::http::Method;
-use reqwest::Client;
+use axum::http::{response, Method};
+use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
+use core::time;
 use std::collections::HashSet;
 use std::{collections::HashMap, net::SocketAddr};
 use std::process::Command;
@@ -112,6 +113,35 @@ struct CameraSpace {
     cam2_total: f64,
 }
 
+#[derive(Deserialize)]
+struct ImageDataParams {
+    camera: String,
+    date: String,
+    set: String,
+    folder: String,
+    img_num: String,
+}
+#[derive(Debug, Serialize, Deserialize)]
+struct ImageDataPoint{
+    date: String,
+    lat: f64,
+    lon: f64,
+    cog: f64,
+    sog: f64,
+    conductivity: f64,
+    depth: f64,
+    oxygen_percentage: f64,
+    oxygen_ppm: f64,
+    ph: f64,
+    pressure: f64,
+    salinity: f64,
+    temperature: f64,
+}
+#[derive(Deserialize)]
+struct CameraFoldersParams {
+    camera: String,
+    date: String,
+}
 // queries influxdb for idronaut data
 async fn query_data() -> Result<Json<Vec<DataPoint>>, StatusCode> {
     let host = "http://localhost:8086"; // InfluxDB v2 server
@@ -363,12 +393,6 @@ fn extract_set_info(tag: &str) -> Option<String> {
     None
 }
 
-#[derive(Deserialize)]
-struct CameraFoldersParams {
-    camera: String,
-    date: String,
-}
-
 async fn camera_folders_call(Query(params): Query<CameraFoldersParams>) -> Result<Json<Vec<String>>, StatusCode> {
     let camera = params.camera;
     let req_date = params.date;
@@ -377,9 +401,9 @@ async fn camera_folders_call(Query(params): Query<CameraFoldersParams>) -> Resul
     let start_time = format!("{}T00:00:00Z", req_date);
     let end_time = format!("{}T23:59:59Z", req_date);
 
-    let host = "http://localhost:8086"; // InfluxDB v2 server
-    let org = "SailingLab";
-    let token="ijL6ry3VP0Hm5nAvP-wvHouC1l3ysIWty-VWCPgF7Bz-aKt-4Oi9zFMV_t8UkVnQSVwdxlRpdKjbAuPxx9umsA==";
+    //let host = "http://localhost:8086"; // InfluxDB v2 server
+    //let org = "SailingLab";
+    //let token="ijL6ry3VP0Hm5nAvP-wvHouC1l3ysIWty-VWCPgF7Bz-aKt-4Oi9zFMV_t8UkVnQSVwdxlRpdKjbAuPxx9umsA==";
 
     // Build the Flux query
     let flux_query = format!(
@@ -392,24 +416,29 @@ async fn camera_folders_call(Query(params): Query<CameraFoldersParams>) -> Resul
     );
 
 
-    let client = Client::new();
-    let query_result = client
-        .post(format!("{}/api/v2/query?org={}", host, org))
-        .header("Authorization", format!("Token {}", token))
-        .header("Accept", "application/csv")
-        .header("Content-Type", "application/vnd.flux")
-        .body(flux_query)
-        .send()
-        .await
-        .map_err(|e| {
-            info!("Request error: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    // let client = Client::new();
+    // let query_result = client
+    //     .post(format!("{}/api/v2/query?org={}", host, org))
+    //     .header("Authorization", format!("Token {}", token))
+    //     .header("Accept", "application/csv")
+    //     .header("Content-Type", "application/vnd.flux")
+    //     .body(flux_query)
+    //     .send()
+    //     .await
+    //     .map_err(|e| {
+    //         info!("Request error: {:?}", e);
+    //         StatusCode::INTERNAL_SERVER_ERROR
+    //     })?;
     
-    let response_text = query_result.text().await.map_err(|e| {
-        info!("Response text error: {:?}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    // let response_text = query_result.text().await.map_err(|e| {
+    //     info!("Response text error: {:?}", e);
+    //     StatusCode::INTERNAL_SERVER_ERROR
+    // })?;
+
+    let response_text: String = post_influx_query(flux_query).await?;
+    if response_text.is_empty() {
+        return Err(StatusCode::NOT_FOUND);
+    }
 
     println!("Raw CSV Response:\n{}", response_text);
     let mut data_points = Vec::new();
@@ -434,20 +463,36 @@ async fn camera_folders_call(Query(params): Query<CameraFoldersParams>) -> Resul
 
 }
 
-#[derive(Deserialize)]
-struct ImageDataParams {
-    camera: String,
-    date: String,
-    set: String,
-    folder: String,
-    img_num: String,
-}
-async fn image_data_call(Query(params): Query<ImageDataParams>) -> Result<Json<Vec<DataPoint>>, StatusCode> {
-    let file = format!("/files/{}/{}/IMG_{}_1.tif", params.set, params.folder, params.img_num);
+async fn post_influx_query(query_body: String) -> Result<String, axum::http::StatusCode> {
+    info!("Executing flux query:\n{}", query_body);
     let host = "http://localhost:8086"; // InfluxDB v2 server
     let org = "SailingLab";
     let token="ijL6ry3VP0Hm5nAvP-wvHouC1l3ysIWty-VWCPgF7Bz-aKt-4Oi9zFMV_t8UkVnQSVwdxlRpdKjbAuPxx9umsA==";
-    let flux_query1 = format!(
+    let client = Client::new();
+    let query_result = client
+        .post(format!("{}/api/v2/query?org={}", host, org))
+        .header("Authorization", format!("Token {}", token))
+        .header("Accept", "application/csv")
+        .header("Content-Type", "application/vnd.flux")
+        .body(query_body)
+        .send()
+        .await
+        .map_err(|e| {
+            info!("Request error: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    
+    let response_text = query_result.text().await.map_err(|e| {
+        info!("Response text error: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    
+    Ok(response_text)
+}
+
+async fn image_data_call(Query(params): Query<ImageDataParams>) -> Result<Json<ImageDataPoint>, StatusCode> {
+    let file = format!("/files/{}/{}/IMG_{}_1.tif", params.set, params.folder, params.img_num);
+    let ts_query = format!(
         r#"from(bucket: "asv_data")
             |> range(start: {}T00:00:00Z, stop: {}T23:59:59Z)  // Replace with your date
             |> filter(fn: (r) => r._measurement == "micasense_data")
@@ -457,30 +502,16 @@ async fn image_data_call(Query(params): Query<ImageDataParams>) -> Result<Json<V
             |> keep(columns: ["_time"])"#,
             params.date, params.date, params.camera, file
     );
-    println!("Query 1:\n{}", flux_query1);
-    let client = Client::new();
-    let query_result1 = client
-        .post(format!("{}/api/v2/query?org={}", host, org))
-        .header("Authorization", format!("Token {}", token))
-        .header("Accept", "application/csv")
-        .header("Content-Type", "application/vnd.flux")
-        .body(flux_query1)
-        .send()
-        .await
-        .map_err(|e| {
-            info!("Request error: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    println!("Query 1:\n{}", ts_query);
     
-    let response_text1 = query_result1.text().await.map_err(|e| {
-        info!("Response text error: {:?}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-    println!("Raw CSV Response:\n{}", response_text1.clone());
+    let ts_response: String = post_influx_query(ts_query).await?;
+    if ts_response.is_empty() {
+        return Err(StatusCode::NOT_FOUND);
+    }
     let mut timestamp = String::new();
     let mut reader = ReaderBuilder::new()
         .has_headers(true)
-        .from_reader(Cursor::new(response_text1));
+        .from_reader(Cursor::new(ts_response));
         for result in reader.records() {
             println!("Result:\n{:?}", result);
             if let Ok(record) = result {
@@ -490,10 +521,10 @@ async fn image_data_call(Query(params): Query<ImageDataParams>) -> Result<Json<V
             }
         }
 
-    let flux_query2 = format!(
+    let idro_query = format!(
         r#"import "experimental"
 from(bucket: "asv_data")
-            |> range(start: experimental.addDuration(d: -5s, to: {}), stop: experimental.addDuration(d: 5s, to: {})) 
+            |> range(start: experimental.addDuration(d: -1s, to: {}), stop: experimental.addDuration(d: 1s, to: {})) 
             |> filter(fn: (r) => r._measurement == "idronaut_data")
             |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
             |> elapsed(unit: 1ns)
@@ -502,27 +533,101 @@ from(bucket: "asv_data")
             timestamp, timestamp
     );
 
-    println!("Query 2:\n{}", flux_query2);
-    let query_result2 = client
-        .post(format!("{}/api/v2/query?org={}", host, org))
-        .header("Authorization", format!("Token {}", token))
-        .header("Accept", "application/csv")
-        .header("Content-Type", "application/vnd.flux")
-        .body(flux_query2)
-        .send()
-        .await
-        .map_err(|e| {
-            info!("Request error: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    println!("Query 2:\n{}", idro_query);
+    let idro_response: String = post_influx_query(idro_query).await?;
+    println!("Raw CSV Response:\n{}", idro_response);
+    if idro_response.is_empty() {
+        return Err(StatusCode::NOT_FOUND);
+    }
 
-    let response_text2 = query_result2.text().await.map_err(|e| {
-        info!("Response text error: {:?}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    let mut f_cond = -1.0;
+    let mut f_oxperc = -1.0;
+    let mut f_oxppm = -1.0;
+    let mut f_ph = -1.0;
+    let mut f_press = -1.0;
+    let mut f_sal = -1.0;
+    let mut f_temp = -1.0;
+    reader = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(Cursor::new(idro_response));
+        for result in reader.records() {
+            if let Ok(record) = result {
+                if let (Some(cond), Some(oxperc), Some(oxppm),
+                        Some(ph), Some(press), Some(sal), Some(temp)) = (record.get(7), record.get(8), record.get(9),
+                                                                                                 record.get(10), record.get(11), record.get(12), record.get(13)) { // 5 -> timestamp, 6..11 -> sensors
+                    if let (Ok(parsed_cond), Ok(parsed_oxperc), Ok(parsed_oxppm), Ok(parsed_ph), Ok(parsed_press), Ok(parsed_sal), Ok(parsed_temp)) = 
+                    (cond.parse::<f64>(), oxperc.parse::<f64>(), oxppm.parse::<f64>(), 
+                        ph.parse::<f64>(), press.parse::<f64>(), sal.parse::<f64>(), temp.parse::<f64>()) {
+                            f_cond = parsed_cond;
+                            f_oxperc = parsed_oxperc;
+                            f_oxppm = parsed_oxppm;
+                            f_ph = parsed_ph;
+                            f_press = parsed_press;
+                            f_sal = parsed_sal;
+                            f_temp = parsed_temp;
+                    }
+                }
+            }
+        }
 
-    println!("Raw CSV Response:\n{}", response_text2);
-    let datapoints : Vec<DataPoint> = Vec::new();
+    let gps_query = format!(
+            r#"import "experimental"
+    from(bucket: "asv_data")
+                |> range(start: experimental.addDuration(d: -1s, to: {}), stop: experimental.addDuration(d: 1s, to: {})) 
+                |> filter(fn: (r) => r._measurement == "gps_data2")
+                |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+                |> elapsed(unit: 1ns)
+                |> sort(columns: ["elapsed"], desc: false)
+                |> limit(n: 1)"#,
+                timestamp, timestamp
+    );
+    let gps_response: String = post_influx_query(gps_query).await?;
+    println!("Raw CSV Response:\n{}", gps_response);
+    if gps_response.is_empty() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    let mut f_cog = 0.0;
+    let mut f_depth = 1.0;
+    let mut f_lat = 0.0;
+    let mut f_lon = 0.0;
+    let mut f_sog = 0.0;
+    reader = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(Cursor::new(gps_response));
+        for result in reader.records() {
+            if let Ok(record) = result {
+                if let (Some(cog), Some(depth), Some(lat),
+                        Some(lon), Some(sog)) = (record.get(7), record.get(8), record.get(9),
+                                                             record.get(10), record.get(13)) { // 5 -> timestamp, 6..11 -> sensors
+                    if let (Ok(parsed_cog), Ok(parsed_depth), Ok(parsed_lat), Ok(parsed_lon), Ok(parsed_sog)) = 
+                    (cog.parse::<f64>(), depth.parse::<f64>(), lat.parse::<f64>(), 
+                        lon.parse::<f64>(), sog.parse::<f64>()) {
+                            f_cog = parsed_cog;
+                            f_depth = parsed_depth;
+                            f_lat = parsed_lat;
+                            f_lon = parsed_lon;
+                            f_sog = parsed_sog;
+                    }
+                }
+            }
+        }
+
+    let datapoints= ImageDataPoint{
+        date: timestamp,
+        lat: f_lat,
+        lon: f_lon,
+        cog: f_cog,
+        sog: f_sog,
+        conductivity: f_cond,
+        depth: f_depth,
+        oxygen_percentage: f_oxperc,
+        oxygen_ppm: f_oxppm,
+        ph: f_ph,
+        pressure: f_press,
+        salinity: f_sal,
+        temperature: f_temp,
+    };
     Ok(Json(datapoints))
 }
 
