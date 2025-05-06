@@ -135,7 +135,7 @@ pub fn CameraPage() -> impl IntoView {
         let cl = client.get_untracked().clone();
     
         spawn_local(async move {
-            let url = "http://192.168.2.9:3000/api/get_last_capture";
+            let url = "http://192.168.2.9:3000/api/get_last_capture?cam=cam1&band=1";
     
             match cl.get(url).send().await {
                 Ok(res) => {
@@ -144,7 +144,7 @@ pub fn CameraPage() -> impl IntoView {
                             Ok(bytes) => {
                                 // Encode the image bytes to base64
                                 let base64_str = base64::encode(&bytes);
-                                let data_url = format!("data:image/tiff;base64,{}", base64_str);
+                                let data_url = format!("data:image/jpeg;base64,{}", base64_str);
                                 last_capture_image.set(Some(data_url));
                                 status_message.set("Image fetched successfully.".to_string());
                             },
@@ -336,7 +336,29 @@ pub fn CameraPage() -> impl IntoView {
         {move || last_capture_image.get().map(|data_url| view! {
             <div>
                 <p><strong>"Last Capture Preview:"</strong></p>
-                <img src="http://192.168.2.9:3000/api/get_last_capture" alt="Last Capture" style="max-width: 500px;" />
+                <p>"Red Band 1 (475±32)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam1&band=1" alt="Last Capture" style="max-width: 500px;" />
+                <p>"Red Band 2 (560±27)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam1&band=2" alt="Last Capture" style="max-width: 500px;" />
+                <p>"Red Band 3 (668±14)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam1&band=3" alt="Last Capture" style="max-width: 500px;" />
+                <p>"Red Band 4 (717±12)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam1&band=4" alt="Last Capture" style="max-width: 500px;" />
+                <p>"Red Band 5 (842±57)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam1&band=5" alt="Last Capture" style="max-width: 500px;" />
+            </div>
+            <div>
+                <p><strong>"Last Capture Preview:"</strong></p>
+                <p>"Blue Band 1 (444±28)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam2&band=1" alt="Last Capture" style="max-width: 500px;" />
+                <p>"Blue Band 2 (560±14)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam2&band=2" alt="Last Capture" style="max-width: 500px;" />
+                <p>"Blue Band 3 (668±16)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam2&band=3" alt="Last Capture" style="max-width: 500px;" />
+                <p>"Blue Band 4 (705±10)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam2&band=4" alt="Last Capture" style="max-width: 500px;" />
+                <p>"Blue Band 5 (740±18)" </p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam2&band=5" alt="Last Capture" style="max-width: 500px;" />
             </div>
     })}
 </div>

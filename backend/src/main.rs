@@ -1,3 +1,4 @@
+//use axum::body::Bytes;
 use axum::extract::Query;
 use axum::http::{header, response, Method};
 use reqwest::{Client, Response};
@@ -5,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use core::time;
 use std::collections::HashSet;
 use std::str::from_utf8;
+use bytes::Bytes;
 use std::{collections::HashMap, net::SocketAddr};
 use std::process::Command;
 use tracing::info;
@@ -123,6 +125,11 @@ struct ImageDataParams {
     folder: String,
     img_num: String,
 }
+#[derive(Deserialize)]
+struct CaptureParams {
+    cam: String,
+    band: String,
+}
 #[derive(Debug, Serialize, Deserialize)]
 struct ImageDataPoint{
     date: String,
@@ -143,6 +150,20 @@ struct ImageDataPoint{
 struct CameraFoldersParams {
     camera: String,
     date: String,
+}
+
+//#[derive(Serialize, Deserialize, Debug)]
+struct ImageBytes {
+    band_1: Bytes,
+    band_2: Bytes,
+    band_3: Bytes,
+    band_4: Bytes,
+    band_5: Bytes,
+}
+//#[derive(Serialize, Deserialize, Debug)]
+struct CamImages {
+    cam1: ImageBytes,
+    cam2: ImageBytes,
 }
 // queries influxdb for idronaut data
 async fn query_data() -> Result<Json<Vec<DataPoint>>, StatusCode> {
@@ -681,18 +702,67 @@ async fn get_last_capture_filename(camera: &str) -> Result<String, StatusCode> {
     Ok(res)
 }
 
-async fn get_last_capture() -> Result<axum::body::Bytes, StatusCode>{
-    let filename_1 = get_last_capture_filename("cam1").await?;
-    let filename_2 = get_last_capture_filename("cam2").await?;
-    let cam1_url = "192.168.1.83";
-    let cam2_url = "192.168.3.83";
-    let micasense_url1 = format!("http://{}{}", cam1_url, filename_1);
-    let micasense_url2 = format!("http://{}{}", cam1_url, filename_1);
+async fn get_capture(micasense_url: String, client: Client) -> Result<Bytes, StatusCode>{
+    match client.get(&micasense_url).send().await {
+        Ok(response) => {
+            // Check if the response was successful
+            if response.status().is_success() {
+                match response.bytes().await {
+                    Ok(bytes) => {
+                        // Convert TIF to JPEG
+                        match convert_tif_to_jpeg(&bytes) {
+                            Ok(jpeg_bytes) => {
+                                return Ok(jpeg_bytes);
+                            }
+                            Err(_) => {
+                                // Error during conversion
+                                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                            }
+                        }
+                    }
+                    Err(_) => {
+                        return Err(StatusCode::NOT_FOUND);
+                    }
+                }
+            } else {
+                return Err(StatusCode::NOT_FOUND);
+            }
+        }
+        Err(_) => {
+            return Err(StatusCode::NOT_FOUND);
+        }
+    }
+}
+
+async fn get_last_capture(Query(params): Query<CaptureParams>) -> Result<Bytes, StatusCode>{
+    if (params.cam != "cam1") && (params.cam != "cam2"){
+        return Err(StatusCode::NOT_FOUND)
+    }
+    let mut filename = get_last_capture_filename("cam1").await?;
+    let mut cam_url = "192.168.1.83";
+    if params.cam == "cam2" {
+        cam_url = "192.168.3.83";
+    }
+    if filename == "" {
+        return Err(StatusCode::NOT_FOUND)
+    }
+    
+    match params.band.parse::<i32>(){
+        Ok(num) => {
+            if num < 1 || num > 5 {
+                return Err(StatusCode::NOT_FOUND);
+            } else if num > 1 && num <= 5 {
+                filename.truncate(filename.len() - 5);
+                filename = format!("{}{}.tif", filename, num);
+            }
+        },
+        Err(_) => return Err(StatusCode::NOT_FOUND)
+    }
+    let micasense_url = format!("http://{}{}", cam_url, filename);
     let client = Client::new();
-
-    println!("url: {}", micasense_url1);
-
-    match client.get(&micasense_url1).send().await {
+    println!("url: {}", micasense_url);
+    
+    match client.get(&micasense_url).send().await {
         Ok(response) => {
             // Check if the response was successful
             if response.status().is_success() {
