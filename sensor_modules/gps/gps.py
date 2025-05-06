@@ -285,7 +285,7 @@ class GPS:
             if data:
                 self.ping_data = data["distance"]
             else:
-                self.ping_data = -1
+                self.ping_data = -1000
                 self.debug_logger.debug("Failed to get ping sonar distance data")
 
             return True

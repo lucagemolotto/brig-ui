@@ -527,9 +527,11 @@ dependencies = [
 name = "frontend"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "chrono",
  "const_format",
  "gloo",
+ "js-sys",
  "leptos",
  "leptos-chartistry",
  "leptos_router",

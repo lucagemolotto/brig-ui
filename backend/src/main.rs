@@ -1,9 +1,10 @@
 use axum::extract::Query;
-use axum::http::{response, Method};
+use axum::http::{header, response, Method};
 use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use core::time;
 use std::collections::HashSet;
+use std::str::from_utf8;
 use std::{collections::HashMap, net::SocketAddr};
 use std::process::Command;
 use tracing::info;
@@ -20,6 +21,7 @@ use std::io::Cursor;
 use chrono::{DateTime, NaiveDate, Utc};
 use tower_http::cors::{CorsLayer, Any};
 use tokio::task;
+use image::{load_from_memory, load_from_memory_with_format, ImageFormat};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct DataPoint {
@@ -124,18 +126,18 @@ struct ImageDataParams {
 #[derive(Debug, Serialize, Deserialize)]
 struct ImageDataPoint{
     date: String,
-    lat: f64,
-    lon: f64,
-    cog: f64,
-    sog: f64,
-    conductivity: f64,
-    depth: f64,
-    oxygen_percentage: f64,
-    oxygen_ppm: f64,
-    ph: f64,
-    pressure: f64,
-    salinity: f64,
-    temperature: f64,
+    lat: Option<f64>,
+    lon: Option<f64>,
+    cog: Option<f64>,
+    sog: Option<f64>,
+    conductivity: Option<f64>,
+    depth: Option<f64>,
+    oxygen_percentage: Option<f64>,
+    oxygen_ppm: Option<f64>,
+    ph: Option<f64>,
+    pressure: Option<f64>,
+    salinity: Option<f64>,
+    temperature: Option<f64>,
 }
 #[derive(Deserialize)]
 struct CameraFoldersParams {
@@ -540,13 +542,13 @@ from(bucket: "asv_data")
         return Err(StatusCode::NOT_FOUND);
     }
 
-    let mut f_cond = -1.0;
-    let mut f_oxperc = -1.0;
-    let mut f_oxppm = -1.0;
-    let mut f_ph = -1.0;
-    let mut f_press = -1.0;
-    let mut f_sal = -1.0;
-    let mut f_temp = -1.0;
+    let mut f_cond = None;
+    let mut f_oxperc = None;
+    let mut f_oxppm = None;
+    let mut f_ph = None;
+    let mut f_press = None;
+    let mut f_sal = None;
+    let mut f_temp = None;
     reader = ReaderBuilder::new()
         .has_headers(true)
         .from_reader(Cursor::new(idro_response));
@@ -555,16 +557,26 @@ from(bucket: "asv_data")
                 if let (Some(cond), Some(oxperc), Some(oxppm),
                         Some(ph), Some(press), Some(sal), Some(temp)) = (record.get(7), record.get(8), record.get(9),
                                                                                                  record.get(10), record.get(11), record.get(12), record.get(13)) { // 5 -> timestamp, 6..11 -> sensors
-                    if let (Ok(parsed_cond), Ok(parsed_oxperc), Ok(parsed_oxppm), Ok(parsed_ph), Ok(parsed_press), Ok(parsed_sal), Ok(parsed_temp)) = 
-                    (cond.parse::<f64>(), oxperc.parse::<f64>(), oxppm.parse::<f64>(), 
-                        ph.parse::<f64>(), press.parse::<f64>(), sal.parse::<f64>(), temp.parse::<f64>()) {
-                            f_cond = parsed_cond;
-                            f_oxperc = parsed_oxperc;
-                            f_oxppm = parsed_oxppm;
-                            f_ph = parsed_ph;
-                            f_press = parsed_press;
-                            f_sal = parsed_sal;
-                            f_temp = parsed_temp;
+                    if let Ok(parsed_cond) = cond.parse::<f64>(){
+                        f_cond = Some(parsed_cond);
+                    }
+                    if let Ok(parsed_oxperc) = oxperc.parse::<f64>(){
+                        f_oxperc = Some(parsed_oxperc);
+                    }
+                    if let Ok(parsed_oxppm) = oxppm.parse::<f64>(){
+                        f_oxppm = Some(parsed_oxppm);
+                    }
+                    if let Ok(parsed_ph) = ph.parse::<f64>(){
+                        f_ph = Some(parsed_ph);
+                    }
+                    if let Ok(parsed_press) = press.parse::<f64>(){
+                        f_press = Some(parsed_press);
+                    }
+                    if let Ok(parsed_sal) = sal.parse::<f64>(){
+                        f_sal = Some(parsed_sal);
+                    }
+                    if let Ok(parsed_temp) = temp.parse::<f64>(){
+                        f_temp = Some(parsed_temp);
                     }
                 }
             }
@@ -587,27 +599,34 @@ from(bucket: "asv_data")
         return Err(StatusCode::NOT_FOUND);
     }
 
-    let mut f_cog = 0.0;
-    let mut f_depth = 1.0;
-    let mut f_lat = 0.0;
-    let mut f_lon = 0.0;
-    let mut f_sog = 0.0;
+    let mut f_cog = None;
+    let mut f_depth = None;
+    let mut f_lat = None;
+    let mut f_lon = None;
+    let mut f_sog = None;
     reader = ReaderBuilder::new()
         .has_headers(true)
         .from_reader(Cursor::new(gps_response));
         for result in reader.records() {
             if let Ok(record) = result {
+
                 if let (Some(cog), Some(depth), Some(lat),
                         Some(lon), Some(sog)) = (record.get(7), record.get(8), record.get(9),
-                                                             record.get(10), record.get(13)) { // 5 -> timestamp, 6..11 -> sensors
-                    if let (Ok(parsed_cog), Ok(parsed_depth), Ok(parsed_lat), Ok(parsed_lon), Ok(parsed_sog)) = 
-                    (cog.parse::<f64>(), depth.parse::<f64>(), lat.parse::<f64>(), 
-                        lon.parse::<f64>(), sog.parse::<f64>()) {
-                            f_cog = parsed_cog;
-                            f_depth = parsed_depth;
-                            f_lat = parsed_lat;
-                            f_lon = parsed_lon;
-                            f_sog = parsed_sog;
+                                                             record.get(11), record.get(13)) {
+                    if let Ok(parsed_cog) = cog.parse::<f64>(){
+                        f_cog = Some(parsed_cog);
+                    }
+                    if let Ok(parsed_depth) = depth.parse::<f64>(){
+                        f_depth = Some(parsed_depth);
+                    }
+                    if let Ok(parsed_lat) = lat.parse::<f64>(){
+                        f_lat = Some(parsed_lat);
+                    }
+                    if let Ok(parsed_lon) = lon.parse::<f64>(){
+                        f_lon = Some(parsed_lon);
+                    }
+                    if let Ok(parsed_sog) = sog.parse::<f64>(){
+                        f_sog = Some(parsed_sog);
                     }
                 }
             }
@@ -631,6 +650,116 @@ from(bucket: "asv_data")
     Ok(Json(datapoints))
 }
 
+
+async fn get_last_capture_filename(camera: &str) -> Result<String, StatusCode> {
+    let flux_query = format!(
+        r#"from(bucket: "asv_data")
+            |> range(start: -1h)
+            |> filter(fn: (r) => r._measurement == "micasense_data")
+            |> filter(fn: (r) => r._field == "capture")
+            |> filter(fn: (r) => r.camera == "{}")
+            |> last()
+            |> yield(name: "last")"#,
+        camera
+    );
+    let response: String = post_influx_query(flux_query).await?;
+    println!("Raw CSV Response:\n{}", response);
+    if response.is_empty() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+    let mut res = "".to_string();
+    let mut reader = ReaderBuilder::new()
+    .has_headers(true)
+    .from_reader(Cursor::new(response));
+    for result in reader.records() {
+        if let Ok(record) = result {
+            if let Some(str) = record.get(6){
+                res = str.to_string();
+            }
+        }
+    }
+    Ok(res)
+}
+
+async fn get_last_capture() -> Result<axum::body::Bytes, StatusCode>{
+    let filename_1 = get_last_capture_filename("cam1").await?;
+    let filename_2 = get_last_capture_filename("cam2").await?;
+    let cam1_url = "192.168.1.83";
+    let cam2_url = "192.168.3.83";
+    let micasense_url1 = format!("http://{}{}", cam1_url, filename_1);
+    let micasense_url2 = format!("http://{}{}", cam1_url, filename_1);
+    let client = Client::new();
+
+    println!("url: {}", micasense_url1);
+
+    match client.get(&micasense_url1).send().await {
+        Ok(response) => {
+            // Check if the response was successful
+            if response.status().is_success() {
+                match response.bytes().await {
+                    Ok(bytes) => {
+                        // Convert TIF to JPEG
+                        match convert_tif_to_jpeg(&bytes) {
+                            Ok(jpeg_bytes) => {
+                                return Ok(jpeg_bytes);
+                            }
+                            Err(_) => {
+                                // Error during conversion
+                                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                            }
+                        }
+                    }
+                    Err(_) => {
+                        return Err(StatusCode::NOT_FOUND);
+                    }
+                }
+            } else {
+                return Err(StatusCode::NOT_FOUND);
+            }
+        }
+        Err(_) => {
+            return Err(StatusCode::NOT_FOUND);
+        }
+    }
+    //Ok(filename_1)
+}
+
+use image::codecs::jpeg::JpegEncoder;
+
+fn convert_tif_to_jpeg(tif_bytes: &[u8]) -> Result<axum::body::Bytes, image::ImageError> {
+    //println!("loading bytes...");
+    // load the TIF image from bytes
+    let img_res = load_from_memory_with_format(tif_bytes, ImageFormat::Tiff);
+    //let mut jpeg_buffer = Vec::new();
+    match img_res {
+        Ok(img) => {
+            println!("converting...");
+            // write the image to the buffer in JPEG format
+            let mut default = vec![];
+            let encoder = JpegEncoder::new(&mut default);
+            match img.to_rgb8().write_with_encoder(encoder) {
+                Ok(_) => 
+                println!("all ok"),
+                Err(e) => println!("error: {:?}", e)
+            }
+            // match img.write_to(&mut Cursor::new(&mut jpeg_buffer), ImageFormat::Jpeg) {
+            //     Ok(_) => println!("all ok"),
+            //     Err(e) => println!("error: {:?}", e)
+            // }
+            
+            // convert the buffer to bytes
+            Ok(axum::body::Bytes::from(default))
+        }
+        Err (e) => {
+            println!("loading error: {:?}", e);
+            return Err(e)
+        }
+    }
+    
+    // Create a buffer to store the JPEG image
+    
+}
+
 #[tokio::main]
 async fn main() {
     // initialize logging.
@@ -644,6 +773,7 @@ async fn main() {
         .route("/api/image_data", get(image_data_call))
         .route("/api/reformat/:host", get(status_call))
         .route("/api/:service/:action", post(service_call))
+        .route("/api/get_last_capture", get(get_last_capture))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)

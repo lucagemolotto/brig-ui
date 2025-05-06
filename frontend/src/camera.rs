@@ -128,7 +128,37 @@ pub fn CameraPage() -> impl IntoView {
             }
         });
     };
+    let last_capture_image = RwSignal::new(None::<String>);
 
+    let fetch_last_capture_image = move |_| {
+        status_message.set("Fetching last capture image...".to_string());
+        let cl = client.get_untracked().clone();
+    
+        spawn_local(async move {
+            let url = "http://192.168.2.9:3000/api/get_last_capture";
+    
+            match cl.get(url).send().await {
+                Ok(res) => {
+                    if res.status().is_success() {
+                        match res.bytes().await {
+                            Ok(bytes) => {
+                                // Encode the image bytes to base64
+                                let base64_str = base64::encode(&bytes);
+                                let data_url = format!("data:image/tiff;base64,{}", base64_str);
+                                last_capture_image.set(Some(data_url));
+                                status_message.set("Image fetched successfully.".to_string());
+                            },
+                            Err(_) => status_message.set("Failed to read image bytes.".to_string()),
+                        }
+                    } else {
+                        status_message.set(format!("Server error: {}", res.status()));
+                    }
+                },
+                Err(_) => status_message.set("Failed to connect to server.".to_string())
+            }
+        });
+    };
+    
     view! {
         <h2>"Camera File Browser"</h2>
         <details>
@@ -298,6 +328,19 @@ pub fn CameraPage() -> impl IntoView {
                 </div>
             })}
         </div>
+        <div class="mt-4">
+        <button on:click=fetch_last_capture_image>
+            "Fetch Last Capture Image"
+        </button>
+
+        {move || last_capture_image.get().map(|data_url| view! {
+            <div>
+                <p><strong>"Last Capture Preview:"</strong></p>
+                <img src="http://192.168.2.9:3000/api/get_last_capture" alt="Last Capture" style="max-width: 500px;" />
+            </div>
+    })}
+</div>
+
     }
 }
 
@@ -305,16 +348,16 @@ pub fn CameraPage() -> impl IntoView {
 #[derive(Debug, Clone, serde::Deserialize)]
 struct ImageDataPoint{
     date: String,
-    lat: f64,
-    lon: f64,
-    cog: f64,
-    sog: f64,
-    conductivity: f64,
-    depth: f64,
-    oxygen_percentage: f64,
-    oxygen_ppm: f64,
-    ph: f64,
-    pressure: f64,
-    salinity: f64,
-    temperature: f64,
+    lat: Option<f64>,
+    lon: Option<f64>,
+    cog: Option<f64>,
+    sog: Option<f64>,
+    conductivity: Option<f64>,
+    depth: Option<f64>,
+    oxygen_percentage: Option<f64>,
+    oxygen_ppm: Option<f64>,
+    ph: Option<f64>,
+    pressure: Option<f64>,
+    salinity: Option<f64>,
+    temperature: Option<f64>,
 }
