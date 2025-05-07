@@ -19,6 +19,7 @@ use log::*;
 use const_format::concatcp;  
 
 mod camera;
+mod datavis;
 #[derive(Deserialize, Clone, Debug)]
 struct DataPoint {
     time: String,
@@ -55,6 +56,7 @@ fn App() -> impl IntoView {
                     <Route path=path!("/Charts/") view=Home/>
                     <Route path=path!("/Status/") view=Status/>
                     <Route path=path!("/Cameras/") view=camera::CameraPage/>
+                    <Route path=path!("/Data/") view=datavis::DataPage/>
                 </Routes>
             </main>
         </Router>
