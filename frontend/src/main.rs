@@ -378,6 +378,7 @@ fn SiteHeader() -> impl IntoView {
             <h2><A href="/">"BRIG_UI"</A></h2>
             <nav>
                 <p><A href="/Charts/">"Charts"</A></p>
+                <p><A href="/Data/">"Data"</A></p>
                 <p><A href="/Status/">"Status"</A></p>
                 <p><A href="/Cameras/">"Cameras"</A></p>
             </nav>

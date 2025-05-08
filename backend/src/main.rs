@@ -130,6 +130,11 @@ struct CaptureParams {
     cam: String,
     band: String,
 }
+#[derive(Deserialize)]
+struct CsvDataParams {
+    start: String,
+    end: String,
+}
 #[derive(Debug, Serialize, Deserialize)]
 struct ImageDataPoint{
     date: String,
@@ -830,6 +835,22 @@ fn convert_tif_to_jpeg(tif_bytes: &[u8]) -> Result<axum::body::Bytes, image::Ima
     
 }
 
+async fn get_csv_data(Query(params): Query<CsvDataParams>) -> Result<String, StatusCode>{
+    let flux_query = format!(
+        r#"from(bucket: "asv_data")
+            |> range(start: {}:00Z, stop: {}:00Z)
+            |> filter(fn: (r) => r["_measurement"] == "gps_data2" or r["_measurement"] == "idronaut_data" or r["_measurement"] == "micasense_data")
+            |> drop(columns: ["_start", "_stop", "table", "result"])  
+            |> yield(name: "last")"#,
+        params.start, params.end
+    );
+
+    match post_influx_query(flux_query).await{
+        Ok(res) => return Ok(res),
+        Err(e) => return Err(e)
+    }
+}
+
 #[tokio::main]
 async fn main() {
     // initialize logging.
@@ -844,6 +865,7 @@ async fn main() {
         .route("/api/reformat/:host", get(status_call))
         .route("/api/:service/:action", post(service_call))
         .route("/api/get_last_capture", get(get_last_capture))
+        .route("/api/download_data", get(get_csv_data))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
