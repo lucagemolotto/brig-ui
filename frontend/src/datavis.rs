@@ -22,13 +22,14 @@ struct ImageDataPoint{
     temperature: Option<f64>,
 }
 
-pub fn DataPage() -> impl IntoView {
+pub fn data_page() -> impl IntoView {
     view! {
         <CsvDownload/>
         <ImageData/>
     }
 }
 
+#[component]
 pub fn CsvDownload() -> impl IntoView {
     let start_time = RwSignal::new(String::new());
     let end_time = RwSignal::new(String::new());
@@ -51,8 +52,8 @@ pub fn CsvDownload() -> impl IntoView {
                         let blob_parts = js_sys::Array::new();
                         blob_parts.push(&array.buffer());
 
-                        let mut options = BlobPropertyBag::new();
-                        options.type_("text/csv");
+                        let options = BlobPropertyBag::new();
+                        options.set_type("text/csv");
 
                         let blob = Blob::new_with_buffer_source_sequence_and_options(
                             &blob_parts,

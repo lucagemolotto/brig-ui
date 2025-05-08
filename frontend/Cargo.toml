@@ -7,6 +7,7 @@ edition = "2021"
 base64 = "0.22.1"
 chrono = "0.4.40"
 const_format = "0.2.34"
+engine = "0.0.0"
 gloo = "0.11.0"
 js-sys = "0.3.77"
 leptos = { version = "0.7.7", features = ["csr"] }

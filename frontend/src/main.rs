@@ -3,19 +3,14 @@ use leptos_router::components::{Router, Route, Routes, A};
 use leptos_router::path;
 use reqwest::Client;
 use gloo::timers::callback::Interval;
-use std::time::Duration;
-use std::env;
 use serde::Deserialize;
 use leptos_chartistry::*;
 use leptos::suspense::Suspense;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use chrono::{DateTime, Utc, FixedOffset};
-use wasm_bindgen::JsValue;
-use wasm_logger::*;
+use chrono::{DateTime, FixedOffset};
 use web_sys::console;
 use tracing::info;
-use log::*;
 use const_format::concatcp;  
 
 mod camera;
@@ -55,8 +50,8 @@ fn App() -> impl IntoView {
                     <Route path=path!("/") view=Home/>
                     <Route path=path!("/Charts/") view=Home/>
                     <Route path=path!("/Status/") view=Status/>
-                    <Route path=path!("/Cameras/") view=camera::CameraPage/>
-                    <Route path=path!("/Data/") view=datavis::DataPage/>
+                    <Route path=path!("/Cameras/") view=camera::camera_page/>
+                    <Route path=path!("/Data/") view=datavis::data_page/>
                 </Routes>
             </main>
         </Router>
@@ -67,18 +62,6 @@ fn App() -> impl IntoView {
 async fn load_data(client: Client) -> Vec<DataPoint> {
     info!("Loading data...");
     let mut res = vec![];
-    // match env::var("TARGET_HOST") {
-    //     Ok(val) => {
-    //                 log::info!("Url: {:?}", val);
-    //                 match client.get(format!("http://{}:3000/api/data", val)).send().await {
-    //                     Ok(response) => match response.json::<Vec<DataPoint>>().await {
-    //                         Ok(data) => res = data,
-    //                         Err(_) => res = vec![],
-    //                     },
-    //                     Err(_) => res = vec![],
-    //                 }},
-    //     Err(e) => {info!("Error in retrieving url: {:?}", e); res = vec![]},
-    // }
     match client.get(concatcp!(BASEURL, "/api/data")).send().await {
         Ok(response) => match response.json::<Vec<DataPoint>>().await {
             Ok(data) => res = data,
@@ -92,14 +75,6 @@ async fn load_data(client: Client) -> Vec<DataPoint> {
 
 // post for service calls
 async fn service_request(client: Client, name: &str, action: &str) -> () {
-    let mut url = "".to_string();
-    // match env::var("TARGET_HOST") {
-    //     Ok(val) => {
-    //         url = format!("http://{}:3000/api/{}/{}", val, name, action);
-    //         log::info!("Url: {:?}", url)},
-
-    //     Err(e) => log::info!("Error retrieving env variable: {:?}", e),
-    // }
     let addr = format!("/api/{}/{}", name, action).to_owned();
     let mut url : String = "".to_owned();
     url.push_str(BASEURL);
@@ -182,42 +157,42 @@ fn Home() -> impl IntoView {
     // temperature
     
     let temp_series = Series::new(|p: &DataPoint| {
-            DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east(3600))
+            DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east_opt(3600).unwrap())
     })
     .line(Line::new(|p: &DataPoint| p.value).with_name("Temperature"));
 
     // pressure
     let press_series = Series::new(|p: &DataPoint| {
-        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east(3600))
+        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east_opt(3600).unwrap())
     })
     .line(Line::new(|p: &DataPoint| p.value).with_name("Pressure")); 
 
     // oxygen ppm
     let oxppm_series = Series::new(|p: &DataPoint| {
-        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east(3600))
+        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east_opt(3600).unwrap())
     })
     .line(Line::new(|p: &DataPoint| p.value).with_name("Oxygen (ppm)"));
 
     // oxygen %
     let oxperc_series = Series::new(|p: &DataPoint| {
-        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east(3600))
+        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east_opt(3600).unwrap())
     })
     .line(Line::new(|p: &DataPoint| p.value).with_name("Oxygen (percentage)"));
 
     // conductivity
     let cond_series = Series::new(|p: &DataPoint| {
-        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east(3600))
+        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east_opt(3600).unwrap())
     })
     .line(Line::new(|p: &DataPoint| p.value).with_name("Conductivity"));
 
     // salinity
     let sal_series = Series::new(|p: &DataPoint| {
-        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east(3600))
+        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east_opt(3600).unwrap())
     })
     .line(Line::new(|p: &DataPoint| p.value).with_name("Salinity"));
 
     let ph_series = Series::new(|p: &DataPoint| {
-        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east(3600))
+        DateTime::from_timestamp_millis(p.epochtime as i64).unwrap().with_timezone(&FixedOffset::east_opt(3600).unwrap())
     })
     .line(Line::new(|p: &DataPoint| p.value).with_name("pH"));
 
@@ -273,7 +248,7 @@ fn Status() -> impl IntoView {
 #[component]
 fn ServiceMonitor() -> impl IntoView {
     // signal
-    let tick = create_rw_signal(0);
+    let tick = RwSignal::new(0);
 
     // signal interval
     Interval::new(5000, move || {
@@ -281,20 +256,12 @@ fn ServiceMonitor() -> impl IntoView {
     })
     .forget();
 
-    let mut url = "".to_string();
-    // match env::var("TARGET_HOST") {
-    //     Ok(val) => {
-    //         url = format!("http://{}:3000/api/status", val);
-    //         log::info!("Url: {:?}", url)},
-
-    //     Err(e) => log::info!("Error retrieving env variable: {:?}", e),
-    // }
     let url = concatcp!(BASEURL, "/api/status");
 
     // dynamic resource
     let status_resource = LocalResource::new(move || {
         let _ = tick.get();
-        let value = url.clone();
+        let value = url;
         async move {
             let client = Client::new();
             match client.get(value).send().await {
@@ -319,7 +286,14 @@ fn ServiceMonitor() -> impl IntoView {
     view! {
         <div class="service-monitor">
             <h2>"Service Monitor"</h2>
-            <Suspense fallback=move || view! { <p>"Loading status..."</p> }>
+            <Suspense fallback=move || view! { <div class="status-indicators">
+                                <div>
+                                    <strong>"CTD gathering: "</strong><p>"Loading..."</p>
+                                </div>
+                                <div>
+                                    <strong>"Camera capture: "</strong><p>"Loading..."</p>
+                                </div>
+                            </div> }>
                 {move || {
                     if let Some(status) = status_resource.get() {
                         view! {

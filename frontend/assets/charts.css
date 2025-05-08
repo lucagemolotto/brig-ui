@@ -82,6 +82,7 @@ header a:hover,
 }
 
 .status-container {
+    font-family: Arial, sans-serif;
     text-align: center;
     padding: 20px;
 }
@@ -117,6 +118,7 @@ button:hover {
 }
 
 .service-monitor {
+    font-family: Arial, sans-serif;
     text-align: center;
     padding: 20px;
     border: 1px solid #ddd;

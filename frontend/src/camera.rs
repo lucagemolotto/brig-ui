@@ -1,11 +1,11 @@
+use base64::{Engine as _, engine::general_purpose};
 use leptos::*;
 use reqwest::Client;
-use leptos::suspense::Suspense;
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use leptos::task::spawn_local;
 
-pub fn CameraPage() -> impl IntoView {
+pub fn camera_page() -> impl IntoView {
     view! {
         <CameraStatus/>
         <Reformat/>
@@ -173,7 +173,7 @@ pub fn ImageFetch() -> impl IntoView {
                         match res.bytes().await {
                             Ok(bytes) => {
                                 // Encode the image bytes to base64
-                                let base64_str = base64::encode(&bytes);
+                                let base64_str = general_purpose::STANDARD.encode(&bytes);
                                 let data_url = format!("data:image/jpeg;base64,{}", base64_str);
                                 last_capture_image.set(Some(data_url));
                                 status_message.set("Image fetched successfully.".to_string());
