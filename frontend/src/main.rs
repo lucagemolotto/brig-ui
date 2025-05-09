@@ -15,6 +15,7 @@ use const_format::concatcp;
 
 mod camera;
 mod datavis;
+mod util;
 #[derive(Deserialize, Clone, Debug)]
 struct DataPoint {
     time: String,
@@ -74,7 +75,7 @@ async fn load_data(client: Client) -> Vec<DataPoint> {
 }
 
 // post for service calls
-async fn service_request(client: Client, name: &str, action: &str) -> () {
+async fn service_request(client: Client, name: &str, action: &str, result: &RwSignal<Option<String>>, popup: &RwSignal<bool>) -> () {
     let addr = format!("/api/{}/{}", name, action).to_owned();
     let mut url : String = "".to_owned();
     url.push_str(BASEURL);
@@ -82,12 +83,23 @@ async fn service_request(client: Client, name: &str, action: &str) -> () {
     match client.post(url).send().await {
         Ok(response) => {
             if response.status().is_success() {
-                info!("{} {} request sent successfully", action, name);
+                let res = format!("{} {} request sent successfully", action, name);
+                info!(res);
+                result.set(Some(res));
+                popup.set(true);
             } else {
-                info!("Failed to {} {}", action, name);
+                let res = format!("Failed to {} {}", action, name);
+                info!(res);
+                result.set(Some(res));
+                popup.set(true);
             }
         }
-        Err(err) => info!("Error sending request: {:?}", err),
+        Err(err) => {
+            let res = format!("Error sending request: {:?}", err);
+            info!(res);
+            result.set(Some(res));
+            popup.set(true);
+            }
     }
 }
 
@@ -221,6 +233,8 @@ fn Status() -> impl IntoView {
     let client2= Client::new();
     let client3= Client::new();
 
+    let result = RwSignal::new(None::<String>);
+    let show_popup= RwSignal::new(false);
 
     view! {
         <h2>"Service Control"</h2>
@@ -229,17 +243,21 @@ fn Status() -> impl IntoView {
             <div class="status-buttons">
                 <button class="start" on:click=move |_| spawn_local({
                     let value = client.clone();
-                    async move { service_request(value, "IDRONAUT", "start").await}})>"Start CTD gathering"</button>
+                    async move { service_request(value, "IDRONAUT", "start", &result, &show_popup).await}})>"Start CTD gathering"</button>
                 <button class="start" on:click=move |_| spawn_local({
                     let value = client2.clone();
-                    async move {service_request(value, "camera_capture", "start").await}})>"Start Camera Capture"</button>
+                    async move {service_request(value, "camera_capture", "start", &result, &show_popup).await}})>"Start Camera Capture"</button>
                 <button class="stop" on:click=move |_| spawn_local({
                     let value = client1.clone();
-                    async move {service_request(value, "IDRONAUT", "stop").await}})>"Stop CTD gathering"</button>
+                    async move {service_request(value, "IDRONAUT", "stop", &result, &show_popup).await}})>"Stop CTD gathering"</button>
                 <button class="stop" on:click=move |_| spawn_local({
                     let value = client3.clone();
-                    async move {service_request(value, "camera_capture", "stop").await}})>"Stop Camera Capture"</button>
+                    async move {service_request(value, "camera_capture", "stop", &result, &show_popup).await}})>"Stop Camera Capture"</button>
             </div>
+            <util::PopUp 
+                show_popup=show_popup
+                result=result 
+            />
         </div>
     }
 }

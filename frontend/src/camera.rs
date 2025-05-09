@@ -84,9 +84,9 @@ pub fn Reformat() -> impl IntoView {
     let show_popup= RwSignal::new(false);
     
     // Function to handle the HTTP request
-    let fetch_data = move |_| {
-        // Define the URL to fetch data from
-        let url = "http://192.168.2.9:3000/api/reformat/";
+    let fetch_data = move |camera: &str| {
+        // Define the URL to fetch data from with camera parameter
+        let url = format!("http://192.168.2.9:3000/api/reformat?camera={}", camera);
         
         spawn_local(async move {
             // Use fetch API to make a GET request
@@ -117,42 +117,31 @@ pub fn Reformat() -> impl IntoView {
         });
     };
     
-    // Function to close the popup
-    let close_popup = move |_| {
-        show_popup.set(false);
-    };
-    
     view! {
-        <div class="camera_container">
+        <div class="container">
             <h2>"Reformat Cameras"</h2>
             
-            <button 
-                on:click=fetch_data
-                class="fetch-button"
-            >
-                "Reformat Camera 1"
-            </button>
-                        <Show
-                when=move || show_popup.get()
-                fallback=|| view! { <div></div> }
-            >
-                <div class="popup-overlay">
-                    <div class="popup">
-                        <div class="popup-header">
-                            <h3>"Result"</h3>
-                            <button 
-                                on:click=close_popup
-                                class="close-button"
-                            >
-                                "×"
-                            </button>
-                        </div>
-                        <div class="popup-content">
-                            {move || result.get().unwrap_or_else(|| "No data".to_string())}
-                        </div>
-                    </div>
-                </div>
-            </Show>
+            <div class="button-container">
+                <button 
+                    on:click=move |_| fetch_data("cam1")
+                    class="fetch-button"
+                >
+                    "Reformat Camera 1"
+                </button>
+                
+                <button 
+                    on:click=move |_| fetch_data("cam2")
+                    class="fetch-button"
+                >
+                    "Reformat Camera 2"
+                </button>
+            </div>
+            
+            // Popup window that appears when show_popup is true
+            <crate::util::PopUp 
+                show_popup=show_popup
+                result=result 
+            />
         </div>
     }
 }
