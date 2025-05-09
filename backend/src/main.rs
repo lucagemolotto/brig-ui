@@ -214,30 +214,6 @@ async fn check_service_status(service: &str) -> Result<bool, String> {
     }
 }
 
-// pub async fn format_sd(host: &str) -> Result<Json<ReformatResponse>, StatusCode> {
-    
-//     let mut url = "";
-//     if host == "cam1" {
-//         url = "http://192.168.1.83/reformatsdcard";
-//     } else if host == "cam2" {
-//         url = "http://192.168.3.83/reformatsdcard";
-//     }
-
-//     let client = Client::new();
-
-//     let request_body = ReformatRequest {
-//         erase_all_data: true,
-//     };
-
-//     let response = client
-//         .post(url)
-//         .json(&request_body)
-//         .send()
-//         .await?;
-
-//     Ok(Json(response))
-// }
-
 async fn status_call() -> Result<Json<ServiceStatus>, StatusCode> {
     let idronaut_status = check_service_status("IDRONAUT").await.map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
     let camera_capture_status = check_service_status("camera_capture").await.map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -436,7 +412,7 @@ async fn main() {
         .route("/api/camera_status", get(camera::camera_status_call))
         .route("/api/camera_folders", get(camera::camera_folders_call))
         .route("/api/image_data", get(image_data_call))
-        .route("/api/reformat/:host", get(status_call))
+        .route("/api/reformat", get(camera::format_sd))
         .route("/api/:service/:action", post(service_call))
         .route("/api/get_last_capture", get(camera::get_last_capture))
         .route("/api/download_data", get(get_csv_data))

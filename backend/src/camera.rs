@@ -4,6 +4,7 @@ use axum::{
 use serde::{Serialize, Deserialize};
 use csv::ReaderBuilder;
 use std::io::Cursor;
+use tracing::info;
 use std::collections::HashSet;
 use image::codecs::jpeg::JpegEncoder;
 use image::{load_from_memory_with_format, ImageFormat};
@@ -69,9 +70,25 @@ pub struct CameraFoldersParams {
 }
 
 #[derive(Deserialize)]
+pub struct FormatParams {
+    camera: String,
+}
+
+#[derive(Deserialize)]
 pub struct CaptureParams {
     cam: String,
     band: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ReformatRequest{
+    erase_all_data: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ReformatResponse{
+    message: String,
+    reformat_status: String,
 }
 
 // queries RedEdge HTTP APIs for camera status
@@ -311,4 +328,37 @@ fn convert_tif_to_jpeg(tif_bytes: &[u8]) -> Result<axum::body::Bytes, image::Ima
     
     // Create a buffer to store the JPEG image
     
+}
+
+pub async fn format_sd(Query(params): Query<FormatParams>) -> Result<Json<ReformatResponse>, StatusCode> {
+    
+    let mut url = "";
+    if params.camera == "cam1" {
+        url = "http://192.168.1.83/reformatsdcard";
+    } else if params.camera == "cam2" {
+        url = "http://192.168.3.83/reformatsdcard";
+    } else {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    let client = Client::new();
+
+    let request_body = ReformatRequest {
+        erase_all_data: true,
+    };
+
+    let response = client
+        .post(url)
+        .json(&request_body)
+        .send()
+        .await
+        .map_err(|e| {
+            info!("Request error: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    let resp: Result<ReformatResponse, reqwest::Error> = response.json().await;
+    match resp {
+        Ok(res) => return Ok(Json(res)),
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR)
+    }
 }
