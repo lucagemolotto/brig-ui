@@ -1,4 +1,5 @@
 header {
+    font-family: Arial, sans-serif;
     background-color: #fff;
     border-bottom: 1px solid #fc7089;
     font-size: 100%;
@@ -11,6 +12,7 @@ header {
 }
 
 header>* {
+    font-family: Arial, sans-serif;
     display: flex;
     flex-flow: row wrap;
     gap: 0.5em;
@@ -18,6 +20,7 @@ header>* {
 }
 
 header>h2 {
+    font-family: Arial, sans-serif;
     margin: 0 3em 0 0;
     font-size: 100%;
     /* Remove styled heading */
@@ -27,15 +30,24 @@ header>h2 {
 }
 
 header p {
+    font-family: Arial, sans-serif;
     margin: 0;
 }
 
 header>nav>p {
+    font-family: Arial, sans-serif;
     margin: 0 1em;
 }
 
 header a {
+    font-family: Arial, sans-serif;
     padding: 0.2em 0;
+}
+label,
+option,
+p,
+h2 {
+    font-family: Arial, sans-serif;
 }
 
 h1>a,
@@ -46,6 +58,7 @@ h5>a,
 h6>a,
 header a,
 .always-underline {
+    font-family: Arial, sans-serif;
     text-decoration: none;
     color: #222;
 }
@@ -126,6 +139,7 @@ button:hover {
 }
 
 .status-indicators {
+    font-family: Arial, sans-serif;
     display: flex;
     justify-content: center;
     gap: 20px;
@@ -154,6 +168,7 @@ button:hover {
 }
 
 .popup-overlay {
+    font-family: Arial, sans-serif;
     position: fixed;
     top: 0;
     left: 0;
@@ -167,6 +182,7 @@ button:hover {
 }
 
 .popup {
+    font-family: Arial, sans-serif;
     background-color: white;
     border-radius: 5px;
     width: 80%;
@@ -176,6 +192,7 @@ button:hover {
 }
 
 .popup-header {
+    font-family: Arial, sans-serif;
     display: flex;
     justify-content: space-between;
     align-items: center;
