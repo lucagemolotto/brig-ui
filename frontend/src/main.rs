@@ -302,7 +302,7 @@ fn ServiceMonitor() -> impl IntoView {
     });
 
     view! {
-        <div class="service-monitor">
+        <div class="component-container service-monitor">
             <h2>"Service Monitor"</h2>
             <Suspense fallback=move || view! { <div class="status-indicators">
                                 <div>

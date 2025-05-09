@@ -60,7 +60,7 @@ pub fn CameraStatus() -> impl IntoView {
     });
 
     view! {
-        <div class="camera_container">
+        <div class="camera-container">
             <p>{move || status_message.get()}</p>
             {
                 move || camera_data.get().map(|data| view! {
@@ -118,7 +118,7 @@ pub fn Reformat() -> impl IntoView {
     };
     
     view! {
-        <div class="container">
+        <div class="camera-container">
             <h2>"Reformat Cameras"</h2>
             
             <div class="button-container">
@@ -178,7 +178,7 @@ pub fn ImageFetch() -> impl IntoView {
         });
     };
     view!{
-        <div class="camera_container">
+        <div class="camera-container">
             <button on:click=fetch_last_capture_image class="fetch-button">
                 "Fetch Last Capture Image"
             </button>

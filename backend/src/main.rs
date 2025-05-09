@@ -99,7 +99,7 @@ async fn query_data() -> Result<Json<Vec<DataPoint>>, StatusCode> {
         or r[\"_field\"] == \"pressure\" 
         or r[\"_field\"] == \"temperature\" 
         or r[\"_field\"] == \"salinity\")
-        |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)
+        |> aggregateWindow(every: 1m, fn: last, createEmpty: false)
         |> yield()",
         bucket
     );

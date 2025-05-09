@@ -86,21 +86,27 @@ pub fn CsvDownload() -> impl IntoView {
     };
 
     view! {
-        <p>"Select range of data to download."</p>
-        <div class="time-range-downloader">
-            <label>
-                "Start:"
-                <input type="datetime-local"
-                    on:input=move |e| start_time.set(event_target_value(&e)) />
-            </label>
-            <label>
-                "End:"
-                <input type="datetime-local"
-                    on:input=move |e| end_time.set(event_target_value(&e)) />
-            </label>
-            <button on:click=move |_| download_csv()>
-                "Download CSV"
-            </button>
+        <div class="component-container time-range-downloader">
+            <p>"Select range of data to download."</p>
+            <div class="form-group">
+                <label>
+                    "Start:"
+                    <input type="datetime-local"
+                        on:input=move |e| start_time.set(event_target_value(&e)) />
+                </label>
+            </div>
+            <div class="form-group">
+                <label>
+                    "End:"
+                    <input type="datetime-local"
+                        on:input=move |e| end_time.set(event_target_value(&e)) />
+                </label>
+            </div>
+            <div class="form-group">
+                <button on:click=move |_| download_csv()>
+                    "Download CSV"
+                </button>
+            </div>
         </div>
     }
 }
@@ -231,173 +237,177 @@ pub fn ImageData() -> impl IntoView {
     };
     
     view! {
-        <h2>"Camera File Browser"</h2>
-        <details>
-            <summary>Instructions</summary>
+        <div class="component-container camera-browser">
+            <h2>"Camera File Browser"</h2>
+            <details>
+                <summary>Instructions</summary>
 
-            <p>First select the camera, consult camera documentation for the bands of each one.</p>
-            <p>Select the date of the day the capture was taken, the system will then give a selection of sets and folders that were used that day.</p>
-            <p>The set refers to a startup sequence of the cameras, each time the cameras are powered one, a new set is made.</p>
-            <p>Folders contains up to 200 photos, so IMG_0000 to IMG_0199 will be in folder 000, IMG_0200 to IMG_0399 on folder 001 and so on.</p>
-            <p>The system will then give all chemical-physical parameters and the GPS coordinates related to the given capture.</p>    
-        </details>
-        <div>
-            <label>"Select Camera:"</label>
-            <select
-                on:change=move |ev| selected_camera.set(event_target_value(&ev))
-            >
-                <option 
-                    value="" 
-                    selected=move || selected_camera.get().is_empty()
+                <p>First select the camera, consult camera documentation for the bands of each one.</p>
+                <p>Select the date of the day the capture was taken, the system will then give a selection of sets and folders that were used that day.</p>
+                <p>The set refers to a startup sequence of the cameras, each time the cameras are powered one, a new set is made.</p>
+                <p>Folders contains up to 200 photos, so IMG_0000 to IMG_0199 will be in folder 000, IMG_0200 to IMG_0399 on folder 001 and so on.</p>
+                <p>The system will then give all chemical-physical parameters and the GPS coordinates related to the given capture.</p>    
+            </details>
+            <div class="form-group">
+                <label>"Select Camera:"</label>
+                <select
+                    on:change=move |ev| selected_camera.set(event_target_value(&ev))
                 >
-                    "-- Choose a Camera --"
-                </option>
-                <option 
-                    value="cam1" 
-                    selected=move || selected_camera.get() == "cam1"
-                >
-                    "RedEdge-MX Red"
-                </option>
-                <option 
-                    value="cam2" 
-                    selected=move || selected_camera.get() == "cam2"
-                >
-                    "RedEdge-MX Blue"
-                </option>
-            </select>
-        </div>
+                    <option 
+                        value="" 
+                        selected=move || selected_camera.get().is_empty()
+                    >
+                        "-- Choose a Camera --"
+                    </option>
+                    <option 
+                        value="cam1" 
+                        selected=move || selected_camera.get() == "cam1"
+                    >
+                        "RedEdge-MX Red"
+                    </option>
+                    <option 
+                        value="cam2" 
+                        selected=move || selected_camera.get() == "cam2"
+                    >
+                        "RedEdge-MX Blue"
+                    </option>
+                </select>
+            </div>
 
-        <div>
-            <label>"Select Date of Capture:"</label>
-            <input 
-                type="date" 
-                value=move || selected_date.get() 
-                on:input=move |ev| selected_date.set(event_target_value(&ev)) 
-            />
-            <button 
-                on:click=fetch_folders
-                disabled=move || is_loading_folders.get()
-            >
-                "Load Folders"
-            </button>
-        </div>
-
-        {move || {
-            if is_loading_folders.get() {
-                None
-            } else {
-                Some(view! {
-                    <div>
-                        <div>
-                            <label>"Set:"</label>
-                            <select 
-                                on:change=move |ev| {
-                                    selected_set.set(event_target_value(&ev));
-                                    selected_folder.set("".to_string()); // Reset folder when set changes
-                                }
-                                disabled=move || sets.get().is_empty()
-                            >
-                                <option value="">"-- Choose a Set --"</option>
-                                <For
-                                    each=move || sets.get().clone()
-                                    key=|set| set.clone()
-                                    let:set
-                                >
-                                {let value = set.clone(); view! {
-                                    <option value={value}>{set}</option>
-                                }}
-                                </For>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label>"Folder:"</label>
-                            <select 
-                                on:change=move |ev| selected_folder.set(event_target_value(&ev))
-                                disabled=move || selected_set.get().is_empty()
-                            >
-                                <option value="">"-- Choose a Folder --"</option>
-                                <For
-                                    each=move || {
-                                        folders_map
-                                            .get()
-                                            .get(&selected_set.get())
-                                            .cloned()
-                                            .unwrap_or_default()
-                                    }
-                                    key=|folder| folder.clone()
-                                    let:folder
-                                >
-                                {let value = folder.clone(); view! {
-                                    <option value={value}>{folder}</option>
-                                }}
-                                </For>
-                            </select>
-                        </div>
-                    </div>
-                })
-            }
-        }}
-
-        <div>
-            <label>"Image Number (e.g. 0001):"</label>
-            <input 
-                type="text" 
-                value=move || image_num.get() 
-                on:input=move |ev| image_num.set(event_target_value(&ev)) 
-                disabled=move || selected_folder.get().is_empty()
-            />
-        </div>
-
-        <div class="mt-2">
-            <button 
-                on:click=fetch_metadata
-                disabled=move || {
-                    selected_date.get().is_empty() || 
-                    selected_set.get().is_empty() || 
-                    selected_folder.get().is_empty() || 
-                    image_num.get().is_empty()
-                }
-            >
-                "Fetch Image Data"
-            </button>
-            <p class="status-message">{move || status_message.get()}</p>
-        </div>
-
-        <div class="mt-4">
-            <p><strong>"Full Path: "</strong>
-                {move || {
-                    if selected_set.get().is_empty() || 
-                       selected_folder.get().is_empty() || image_num.get().is_empty() {
-                        "".to_string()
-                    } else {
-                        format!("/files/{}/{}/IMG_{}.tif", 
-                            selected_set.get(), 
-                            selected_folder.get(), 
-                            image_num.get())
-                    }
-                }}
-            </p>
-
-            {move || image_data.get().map(|data| view! {
-                <div class="image-meta">
-                    <p><strong>"Timestamp: "</strong>{data.date.clone()}</p>
-                    <p><strong>"GPS data"</strong></p>
-                    <p><strong>"Latitude: "</strong>{data.lat}</p>
-                    <p><strong>"Longitude: "</strong>{data.lon}</p>
-                    <p><strong>"Cog: "</strong>{data.cog}</p>
-                    <p><strong>"Sog: "</strong>{data.sog}</p>
-                    <p><strong>"Depth: "</strong>{data.depth}</p>
-                    <p><strong>"CTD data"</strong></p>
-                    <p><strong>"Conductivity: "</strong>{data.conductivity}</p>
-                    <p><strong>"Oxygen Percentage: "</strong>{data.oxygen_percentage}</p>
-                    <p><strong>"Oxygen PPM: "</strong>{data.oxygen_ppm}</p>
-                    <p><strong>"pH: "</strong>{data.ph}</p>
-                    <p><strong>"Pressure: "</strong>{data.pressure}</p>
-                    <p><strong>"Salinity: "</strong>{data.salinity}</p>
-                    <p><strong>"Temperature: "</strong>{data.temperature}</p>
+            <div class="form-group">
+                <label>"Select Date of Capture:"</label>
+                <div class="form-row">
+                    <input 
+                        type="date" 
+                        value=move || selected_date.get() 
+                        on:input=move |ev| selected_date.set(event_target_value(&ev)) 
+                    />
+                    <button 
+                        on:click=fetch_folders
+                        disabled=move || is_loading_folders.get()
+                    >
+                        "Load Folders"
+                    </button>
                 </div>
-            })}
+            </div>
+
+            {move || {
+                if is_loading_folders.get() {
+                    None
+                } else {
+                    Some(view! {
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>"Set:"</label>
+                                <select 
+                                    on:change=move |ev| {
+                                        selected_set.set(event_target_value(&ev));
+                                        selected_folder.set("".to_string()); // Reset folder when set changes
+                                    }
+                                    disabled=move || sets.get().is_empty()
+                                >
+                                    <option value="">"-- Choose a Set --"</option>
+                                    <For
+                                        each=move || sets.get().clone()
+                                        key=|set| set.clone()
+                                        let:set
+                                    >
+                                    {let value = set.clone(); view! {
+                                        <option value={value}>{set}</option>
+                                    }}
+                                    </For>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>"Folder:"</label>
+                                <select 
+                                    on:change=move |ev| selected_folder.set(event_target_value(&ev))
+                                    disabled=move || selected_set.get().is_empty()
+                                >
+                                    <option value="">"-- Choose a Folder --"</option>
+                                    <For
+                                        each=move || {
+                                            folders_map
+                                                .get()
+                                                .get(&selected_set.get())
+                                                .cloned()
+                                                .unwrap_or_default()
+                                        }
+                                        key=|folder| folder.clone()
+                                        let:folder
+                                    >
+                                    {let value = folder.clone(); view! {
+                                        <option value={value}>{folder}</option>
+                                    }}
+                                    </For>
+                                </select>
+                            </div>
+                        </div>
+                    })
+                }
+            }}
+
+            <div class="form-group">
+                <label>"Image Number (e.g. 0001):"</label>
+                <input 
+                    type="text" 
+                    value=move || image_num.get() 
+                    on:input=move |ev| image_num.set(event_target_value(&ev)) 
+                    disabled=move || selected_folder.get().is_empty()
+                />
+            </div>
+
+            <div class="form-group">
+                <button 
+                    on:click=fetch_metadata
+                    disabled=move || {
+                        selected_date.get().is_empty() || 
+                        selected_set.get().is_empty() || 
+                        selected_folder.get().is_empty() || 
+                        image_num.get().is_empty()
+                    }
+                >
+                    "Fetch Image Data"
+                </button>
+                <p class="status-message">{move || status_message.get()}</p>
+            </div>
+
+            <div class="form-group">
+                <p><strong>"Full Path: "</strong>
+                    {move || {
+                        if selected_set.get().is_empty() || 
+                        selected_folder.get().is_empty() || image_num.get().is_empty() {
+                            "".to_string()
+                        } else {
+                            format!("/files/{}/{}/IMG_{}.tif", 
+                                selected_set.get(), 
+                                selected_folder.get(), 
+                                image_num.get())
+                        }
+                    }}
+                </p>
+
+                {move || image_data.get().map(|data| view! {
+                    <div class="image-meta">
+                        <p><strong>"Timestamp: "</strong>{data.date.clone()}</p>
+                        <p><strong>"GPS data"</strong></p>
+                        <p><strong>"Latitude: "</strong>{data.lat}</p>
+                        <p><strong>"Longitude: "</strong>{data.lon}</p>
+                        <p><strong>"Cog: "</strong>{data.cog}</p>
+                        <p><strong>"Sog: "</strong>{data.sog}</p>
+                        <p><strong>"Depth: "</strong>{data.depth}</p>
+                        <p><strong>"CTD data"</strong></p>
+                        <p><strong>"Conductivity: "</strong>{data.conductivity}</p>
+                        <p><strong>"Oxygen Percentage: "</strong>{data.oxygen_percentage}</p>
+                        <p><strong>"Oxygen PPM: "</strong>{data.oxygen_ppm}</p>
+                        <p><strong>"pH: "</strong>{data.ph}</p>
+                        <p><strong>"Pressure: "</strong>{data.pressure}</p>
+                        <p><strong>"Salinity: "</strong>{data.salinity}</p>
+                        <p><strong>"Temperature: "</strong>{data.temperature}</p>
+                    </div>
+                })}
+            </div>
         </div>
     }
 }
