@@ -391,13 +391,44 @@ details p {
     border-radius: 0.375rem;
     padding: 1.5rem;
     margin-top: 1rem;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 0.75rem;
+    min-width: 600px; /* Ensure minimum width to accommodate two columns */
 }
   
 .image-meta p {
     margin: 0.25rem 0;
+}
+
+.timestamp {
+    margin-bottom: 0.5rem;
+}
+  
+  
+  
+.section-header {
+    width: 100%;
+    font-size: 1.1em;
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+  
+.data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two equal columns */
+    column-gap: 20px; /* Horizontal spacing between columns */
+    row-gap: 0.75rem; /* Vertical spacing between rows */
+    width: 100%;
+}
+  
+.data-grid p {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-wrap: break-word; /* Ensures text wraps if too long */
 }
   
 /* Specific styles for time-range-downloader */
