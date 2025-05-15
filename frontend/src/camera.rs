@@ -61,6 +61,7 @@ pub fn CameraStatus() -> impl IntoView {
 
     view! {
         <div class="camera-container">
+            <h2>"Camera Info"</h2>
             <p>{move || status_message.get()}</p>
             {
                 move || camera_data.get().map(|data| view! {
@@ -76,12 +77,16 @@ pub fn CameraStatus() -> impl IntoView {
 }
 
 #[component]
-pub fn Reformat() -> impl IntoView {
+pub fn Reformat() -> impl IntoView {    
     // Create a signal for storing fetch results
     let result = RwSignal::new(None::<String>);
     
-    // Create a signal for controlling popup visibility
-    let show_popup= RwSignal::new(false);
+    // Create signals for controlling popups visibility
+    let show_result_popup = RwSignal::new(false);
+    let show_confirmation_popup = RwSignal::new(false);
+    
+    // Create a signal to store which camera is being reformatted
+    let target_camera = RwSignal::new(String::new());
     
     // Function to handle the HTTP request
     let fetch_data = move |camera: &str| {
@@ -95,52 +100,77 @@ pub fn Reformat() -> impl IntoView {
                     if response.status().is_success() {
                         match response.text().await {
                             Ok(text) => {
-                                // Set the result and show the popup
+                                // Set the result and show the result popup
                                 result.set(Some(text));
-                                show_popup.set(true);
+                                show_result_popup.set(true);
                             }
                             Err(err) => {
                                 result.set(Some(format!("Error parsing response: {}", err)));
-                                show_popup.set(true);
+                                show_result_popup.set(true);
                             }
                         }
                     } else {
                         result.set(Some(format!("Error: HTTP status {}", response.status())));
-                        show_popup.set(true);
+                        show_result_popup.set(true);
                     }
                 }
                 Err(err) => {
                     result.set(Some(format!("Request failed: {}", err)));
-                    show_popup.set(true);
+                    show_result_popup.set(true);
                 }
             }
         });
     };
     
+    // Function to show confirmation popup
+    let request_confirmation = move |camera: &str| {
+        target_camera.set(camera.to_string());
+        show_confirmation_popup.set(true);
+    };
+    
+    // Function to handle confirmation
+    let on_confirm = move |_| {
+        let camera = target_camera.get();
+        show_confirmation_popup.set(false);
+        fetch_data(&camera);
+    };
+    
+    // Function to handle cancellation
+    let on_cancel = move |_| {
+        show_confirmation_popup.set(false);
+    };
+    
     view! {
         <div class="camera-container">
             <h2>"Reformat Cameras"</h2>
-            
             <div class="button-container">
-                <button 
-                    on:click=move |_| fetch_data("cam1")
+                <button
+                    on:click=move |_| request_confirmation("cam1")
                     class="fetch-button"
                 >
                     "Reformat Camera 1"
                 </button>
-                
-                <button 
-                    on:click=move |_| fetch_data("cam2")
+                <button
+                    on:click=move |_| request_confirmation("cam2")
                     class="fetch-button"
                 >
                     "Reformat Camera 2"
                 </button>
             </div>
             
-            // Popup window that appears when show_popup is true
-            <crate::util::PopUp 
-                show_popup=show_popup
-                result=result 
+            // Confirmation popup
+            <crate::util::ConfirmationPopup
+                show_popup=show_confirmation_popup
+                message=Signal::derive(move || format!("Are you sure you want to reformat {}? This action cannot be undone.", 
+                    if target_camera.get() == "cam1" { "Camera 1" } else { "Camera 2" }))
+                on_confirm=Callback::new(on_confirm)
+                on_cancel=Callback::new(on_cancel)
+            />
+            
+            // Result popup
+            <crate::util::PopUp
+                show_popup=show_result_popup
+                result=result
             />
         </div>
     }
