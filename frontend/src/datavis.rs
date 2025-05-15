@@ -87,6 +87,21 @@ pub fn CsvDownload() -> impl IntoView {
 
     view! {
         <div class="component-container time-range-downloader">
+            <h2>"Download DB data"</h2>
+            <details>
+                <summary>Instructions</summary>
+
+                <p>"Select start and end date of the range you want the data of."</p>
+                <p>"The interface will then download a CSV file containing all the gathered data."</p>
+                <p>"This data will be given in rows with the following structure:"</p>
+                <p>"result | table | _time | _value | _field | _measurement | camera"</p>
+                <p>"The first two columns can be ignored."</p>
+                <p>"_time is the timestamp of the acquisition of the entry."</p>
+                <p>"_value is the value of the acquisition of the entry."</p>
+                <p>"_field is the name of the parameter (eg. latitude, pH, depth, ...)."</p>
+                <p>"_measurement is the group of the parameter (GPS, CTD or CAMERA)."</p>
+                <p>"camera is a tag used only by camera acquistion entries to denote which of two cameras has made the capture."</p>
+            </details>
             <p>"Select range of data to download."</p>
             <div class="form-group">
                 <label>
@@ -390,21 +405,29 @@ pub fn ImageData() -> impl IntoView {
 
                 {move || image_data.get().map(|data| view! {
                     <div class="image-meta">
-                        <p><strong>"Timestamp: "</strong>{data.date.clone()}</p>
-                        <p><strong>"GPS data"</strong></p>
-                        <p><strong>"Latitude: "</strong>{data.lat}</p>
-                        <p><strong>"Longitude: "</strong>{data.lon}</p>
-                        <p><strong>"Cog: "</strong>{data.cog}</p>
-                        <p><strong>"Sog: "</strong>{data.sog}</p>
-                        <p><strong>"Depth: "</strong>{data.depth}</p>
-                        <p><strong>"CTD data"</strong></p>
-                        <p><strong>"Conductivity: "</strong>{data.conductivity}</p>
-                        <p><strong>"Oxygen Percentage: "</strong>{data.oxygen_percentage}</p>
-                        <p><strong>"Oxygen PPM: "</strong>{data.oxygen_ppm}</p>
-                        <p><strong>"pH: "</strong>{data.ph}</p>
-                        <p><strong>"Pressure: "</strong>{data.pressure}</p>
-                        <p><strong>"Salinity: "</strong>{data.salinity}</p>
-                        <p><strong>"Temperature: "</strong>{data.temperature}</p>
+                        <p class="timestamp"><strong>"Timestamp: "</strong>{data.date.clone()}</p>
+                        
+                        <p class="section-header"><strong>GPS data</strong></p>
+                        
+                        <div class="data-grid">
+                            <p><strong>"Latitude: "</strong>{data.lat}"°"</p>
+                            <p><strong>"Longitude: "</strong>{data.lon}"°"</p>
+                            <p><strong>"Cog: "</strong>{data.cog}"°"</p>
+                            <p><strong>"Sog: "</strong>{data.sog}" m/s"</p>
+                            <p><strong>"Depth: "</strong>{data.depth}" m"</p>
+                        </div>
+                        
+                        <p class="section-header"><strong>CTD data</strong></p>
+                        
+                        <div class="data-grid">
+                            <p><strong>"Conductivity: "</strong>{data.conductivity}" mS/cm"</p>
+                            <p><strong>"Oxygen Percentage: "</strong>{data.oxygen_percentage}</p>
+                            <p><strong>"Oxygen PPM: "</strong>{data.oxygen_ppm}" mg/l"</p>
+                            <p><strong>"pH: "</strong>{data.ph}</p>
+                            <p><strong>"Pressure: "</strong>{data.pressure}" dbar"</p>
+                            <p><strong>"Salinity: "</strong>{data.salinity}</p>
+                            <p><strong>"Temperature: "</strong>{data.temperature}" °C"</p>
+                        </div>
                     </div>
                 })}
             </div>
