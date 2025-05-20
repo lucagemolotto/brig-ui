@@ -207,7 +207,7 @@ pub async fn get_last_capture(Query(params): Query<CaptureParams>) -> Result<Byt
     if (params.cam != "cam1") && (params.cam != "cam2"){
         return Err(StatusCode::NOT_FOUND)
     }
-    let mut filename = get_last_capture_filename("cam1").await?;
+    let mut filename = get_last_capture_filename(&params.cam).await?;
     let mut cam_url = "192.168.1.83";
     if params.cam == "cam2" {
         cam_url = "192.168.3.83";

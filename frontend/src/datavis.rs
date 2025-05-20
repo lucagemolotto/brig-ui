@@ -1,9 +1,17 @@
+use web_sys::console;
+use leptos_chartistry::*;
 use leptos::*;
 use reqwest::Client;
 use wasm_bindgen::JsCast;
+use serde::Deserialize;
 use web_sys::{Blob, BlobPropertyBag, Url, HtmlAnchorElement};
 use leptos::prelude::*;
+use const_format::concatcp;  
+use tracing::info;
+use chrono::{DateTime, Utc};
 use leptos::task::spawn_local;
+
+const BASEURL: &'static str = "http://192.168.2.9:3000";
 
 #[derive(Debug, Clone, serde::Deserialize)]
 struct ImageDataPoint{
@@ -20,6 +28,27 @@ struct ImageDataPoint{
     pressure: Option<f64>,
     salinity: Option<f64>,
     temperature: Option<f64>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct DataPoint {
+    time: String,
+    value: f64,
+    field: String,
+    epochtime: i64,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct RTDataPoint {
+    pub ph: Option<f64>,
+    pub conductivity: Option<f64>,
+    pub salinity: Option<f64>,
+    pub temperature: Option<f64>,
+    pub pressure: Option<f64>,
+    pub oxygen_perc: Option<f64>,
+    pub oxygen_ppm: Option<f64>,
+    pub cog: Option<f64>,
+    pub sog: Option<f64>,
 }
 
 pub fn data_page() -> impl IntoView {
@@ -431,6 +460,136 @@ pub fn ImageData() -> impl IntoView {
                     </div>
                 })}
             </div>
+        </div>
+    }
+}
+
+// queries backend for sensor data, atm only asks for idronaut data
+async fn load_data(client: Client) -> Vec<DataPoint> {
+    info!("Loading data...");
+    let mut res = vec![];
+    match client.get(concatcp!(BASEURL, "/api/data")).send().await {
+        Ok(response) => match response.json::<Vec<DataPoint>>().await {
+            Ok(data) => res = data,
+            Err(_) => res = vec![],
+        },
+        Err(_) => res = vec![],
+    }
+    info!("Data received: {:?}", res);
+    res.sort_by_key(|k| k.epochtime);
+    //console::log_1(&format!("Ordered vector: {:?}", res).into());
+    res
+}
+
+// home component, displays charts and service monitoring
+#[component]
+pub fn Charts() -> impl IntoView {
+
+    let client = Client::new();
+    let data = LocalResource::new(move || {
+        let client = client.clone();
+        async move { 
+            load_data(client).await
+        }
+    });
+
+    //let chart_data = RwSignal::new(vec![]);
+    //let chart_data2 = RwSignal::new(vec![]);
+    let temperature_chart_data = RwSignal::new(vec![]);
+    let pressure_chart_data = RwSignal::new(vec![]);
+    let o2_perc_chart_data = RwSignal::new(vec![]);
+    let o2_pmm_chart_data = RwSignal::new(vec![]);
+    let salinity_chart_data = RwSignal::new(vec![]);
+    let conductivity_chart_data = RwSignal::new(vec![]);
+    let ph_chart_data = RwSignal::new(vec![]);
+
+    // Effect to update chart data
+    Effect::new(move || {
+        if let Some(points) = data.get() {
+            temperature_chart_data.set(points.iter().filter(|&p| p.field == "temperature").cloned().collect());
+            pressure_chart_data.set(points.iter().filter(|&p| p.field == "pressure").cloned().collect());
+            o2_pmm_chart_data.set(points.iter().filter(|&p| p.field == "oxygen_ppm").cloned().collect());
+            o2_perc_chart_data.set(points.iter().filter(|&p| p.field == "oxygen_percentage").cloned().collect());
+            salinity_chart_data.set(points.iter().filter(|&p| p.field == "salinity").cloned().collect());
+            conductivity_chart_data.set(points.iter().filter(|&p| p.field == "conductivity").cloned().collect());
+            ph_chart_data.set(points.iter().filter(|&p| p.field == "ph").cloned().collect());
+            console::log_1(&format!("Ordered vector: {:?}", ph_chart_data.get()).into());
+            //chart_data2.set((*points).clone()); // Example: using the same data for now
+        }
+    });
+
+    // temperature
+    let temp_series = Series::new(|p: &DataPoint| {
+        p.time.parse::<DateTime<Utc>>().unwrap()})
+    .line(Line::new(|p: &DataPoint| p.value).with_name("Temperature"));
+
+    // pressure
+    let press_series = Series::new(|p: &DataPoint| {
+        p.time.parse::<DateTime<Utc>>().unwrap()})
+    .line(Line::new(|p: &DataPoint| p.value).with_name("Pressure")); 
+
+    // oxygen ppm
+    let oxppm_series = Series::new(|p: &DataPoint| {
+        p.time.parse::<DateTime<Utc>>().unwrap()})
+    .line(Line::new(|p: &DataPoint| p.value).with_name("Oxygen (ppm)"));
+
+    // oxygen %
+    let oxperc_series = Series::new(|p: &DataPoint| {
+        p.time.parse::<DateTime<Utc>>().unwrap()})
+    .line(Line::new(|p: &DataPoint| p.value).with_name("Oxygen (percentage)"));
+
+    // conductivity
+    let cond_series = Series::new(|p: &DataPoint| {
+        p.time.parse::<DateTime<Utc>>().unwrap()})
+    .line(Line::new(|p: &DataPoint| p.value).with_name("Conductivity"));
+
+    // salinity
+    let sal_series = Series::new(|p: &DataPoint| {
+        p.time.parse::<DateTime<Utc>>().unwrap()})
+    .line(Line::new(|p: &DataPoint| p.value).with_name("Salinity"));
+
+    let ph_series = Series::new(|p: &DataPoint| {
+        p.time.parse::<DateTime<Utc>>().unwrap()})
+    .line(Line::new(|p: &DataPoint| p.value).with_name("pH"));
+
+    view! {
+        <h2>"CTD Data"</h2>
+        <div class="charts-grid">
+            <Suspense fallback=move || view! { <p>"Loading..."</p> }>
+                <SensorChart title="Temperature".to_string() data=temperature_chart_data series=temp_series />
+                <SensorChart title="Pressure".to_string() data=pressure_chart_data series=press_series />
+                <SensorChart title="Oxygen (ppm)".to_string() data=o2_pmm_chart_data series=oxppm_series.clone() />
+                <SensorChart title="Oxygen %".to_string() data=o2_perc_chart_data series=oxperc_series.clone() />
+                <SensorChart title="Conductivity".to_string() data=conductivity_chart_data series=cond_series.clone() />
+                <SensorChart title="Salinity".to_string() data=salinity_chart_data series=sal_series.clone() />
+                <SensorChart title="pH".to_string() data=ph_chart_data series=ph_series.clone() />
+            </Suspense>
+        </div>
+    }
+}
+
+// component displaying chart for given series and data
+#[component]
+fn SensorChart(title: String, data: RwSignal<Vec<DataPoint>>, series: Series<DataPoint, DateTime<Utc>,  f64>) -> impl IntoView {
+    view! {
+        <div class="chart-container">
+            <Chart
+                aspect_ratio=AspectRatio::from_outer_height(300.0, 1.2)
+                series=series
+                data=data
+                top=RotatedLabel::middle(title)
+                left=TickLabels::aligned_floats()
+                bottom=TickLabels::timestamps()
+                inner=[
+                    AxisMarker::left_edge().into_inner(),
+                    AxisMarker::bottom_edge().into_inner(),
+                    XGridLine::default().into_inner(),
+                    YGridLine::default().into_inner(),
+                    YGuideLine::over_mouse().into_inner(),
+                    XGuideLine::over_data().into_inner(),
+                ]
+                tooltip=Tooltip::left_cursor().show_x_ticks(true)
+            />
         </div>
     }
 }

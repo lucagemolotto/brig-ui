@@ -27,7 +27,7 @@ struct DataPoint {
     time: String,
     field: String,
     value: f64,
-    epochtime: f64, 
+    epochtime: i64, 
 }
 
 impl DataPoint {
@@ -35,7 +35,7 @@ impl DataPoint {
         if let Ok(dt) = time.parse::<DateTime<Utc>>() {
             Some(Self {
                 time: time.to_string(),                // Keep original string
-                epochtime: dt.timestamp_millis() as f64, // Convert to milliseconds since epoch
+                epochtime: dt.timestamp_millis(), // Convert to milliseconds since epoch
                 value,
                 field: field.to_string(),
             })
@@ -43,6 +43,19 @@ impl DataPoint {
             None
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RTDataPoint {
+    pub ph: Option<f64>,
+    pub conductivity: Option<f64>,
+    pub salinity: Option<f64>,
+    pub temperature: Option<f64>,
+    pub pressure: Option<f64>,
+    pub oxygen_perc: Option<f64>,
+    pub oxygen_ppm: Option<f64>,
+    pub cog: Option<f64>,
+    pub sog: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -401,6 +414,63 @@ async fn get_csv_data(Query(params): Query<CsvDataParams>) -> Result<String, Sta
     }
 }
 
+async fn query_latest_data() -> Result<Json<RTDataPoint>, StatusCode>{
+    let ts_query = format!(
+        r#"from(bucket: "asv_data")
+            |> range(start: -10s) 
+            |> filter(fn: (r) => (r._measurement == "idronaut_data" or r._measurement == "gps_data2))
+            |> last()"#
+    );
+    println!("Query RTD:\n{}", ts_query);
+    
+    let response: String = util::post_influx_query(ts_query).await?;
+    if response.is_empty() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+    let mut reader = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(Cursor::new(response));
+    let mut rtd = RTDataPoint{
+        ph: None,
+        conductivity: None,
+        salinity: None,
+        temperature: None,
+        pressure: None,
+        oxygen_perc: None,
+        oxygen_ppm: None,
+        cog: None,
+        sog: None,
+    };
+    for result in reader.records() {
+        if let Ok(record) = result {
+            if let (Some(time), Some(value), Some(field)) = (record.get(5), record.get(6), record.get(7)) { // 5 -> timestamp, 6..11 -> sensors
+                if let Ok(parsed_value) = value.parse::<f64>() {
+                    if field == "ph"{
+                        rtd.ph = Some(parsed_value);
+                    } else if field == "temperature"{
+                        rtd.temperature = Some(parsed_value);
+                    } else if field == "pressure"{
+                        rtd.pressure = Some(parsed_value);
+                    } else if field == "salinity"{
+                        rtd.salinity = Some(parsed_value);
+                    } else if field == "conductivity"{
+                        rtd.conductivity = Some(parsed_value);
+                    } else if field == "oxygen_perc"{
+                        rtd.oxygen_perc = Some(parsed_value);
+                    } else if field == "oxygen_ppm"{
+                        rtd.oxygen_ppm = Some(parsed_value);
+                    } else if field == "cog"{
+                        rtd.cog = Some(parsed_value);
+                    }  else if field == "sog"{
+                        rtd.sog = Some(parsed_value);
+                    }
+                }
+            }
+        }
+    }
+    Ok(Json(rtd))
+}
+
 #[tokio::main]
 async fn main() {
     // initialize logging.
@@ -408,6 +478,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/api/data", get(query_data))
+        .route("/api/latest_data", get(query_latest_data))
         .route("/api/status", get(status_call))
         .route("/api/camera_status", get(camera::camera_status_call))
         .route("/api/camera_folders", get(camera::camera_folders_call))
