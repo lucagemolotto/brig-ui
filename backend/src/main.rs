@@ -443,7 +443,7 @@ async fn query_latest_data() -> Result<Json<RTDataPoint>, StatusCode>{
     };
     for result in reader.records() {
         if let Ok(record) = result {
-            if let (Some(time), Some(value), Some(field)) = (record.get(5), record.get(6), record.get(7)) { // 5 -> timestamp, 6..11 -> sensors
+            if let (Some(value), Some(field)) = (record.get(6), record.get(7)) { // 5 -> timestamp, 6..11 -> sensors
                 if let Ok(parsed_value) = value.parse::<f64>() {
                     if field == "ph"{
                         rtd.ph = Some(parsed_value);
