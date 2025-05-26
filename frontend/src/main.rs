@@ -1,3 +1,4 @@
+use datavis::RTDataPoint;
 use leptos::*;
 use leptos_router::components::{Route, Router, Routes, A};
 use leptos_router::path;
@@ -102,175 +103,178 @@ fn RTData() -> impl IntoView{
         async move { 
             match client.get(concatcp!(BASEURL, "/api/latest_data")).send().await {
                 Ok(response) => match response.json::<datavis::RTDataPoint>().await {
-                    Ok(data) => Some(data),
-                    Err(_) => None,
+                    Ok(data) => data,
+                    Err(_) => RTDataPoint{ph: None, temperature: None, conductivity: None, salinity: None, pressure: None, oxygen_perc: None, oxygen_ppm: None, cog: None, sog: None},
                 },
-                Err(_) => None,
+                Err(_) => RTDataPoint{ph: None, temperature: None, conductivity: None, salinity: None, pressure: None, oxygen_perc: None, oxygen_ppm: None, cog: None, sog: None},
             }
         }
     });
     view!{
         <h2>"Real Time Data"</h2>
-        <div class="charts-grid">
+        <div class="numbers-grid">
             <Suspense fallback=move || view! {
-                <div class="chart-container">
-                <p class="chart-title">pH</p>
-                <p>"Loading..."</p>
+                <div class="chart-container-small">
+                    <div class="number-label">"Temperature"</div>
+                    <div class="number-display">"Loading..."</div>
                 </div>
-                <div class="chart-container">
-                <p class="chart-title">Longitude</p>
-                <p>"Loading..."</p>
+                <div class="chart-container-small">
+                    <div class="number-label">"Pressure"</div>
+                    <div class="number-display">"Loading..."</div>
                 </div>
-                <div class="chart-container">
-                <p class="chart-title">Latitude</p>
-                <p>"Loading..."</p>
+                <div class="chart-container-small">
+                    <div class="number-label">"Conductivity"</div>
+                    <div class="number-display">"Loading..."</div>
                 </div>
-                <div class="chart-container">
-                <p class="chart-title">Temperature</p>
-                <p>"Loading..."</p>
+                <div class="chart-container-small">
+                    <div class="number-label">"Salinity"</div>
+                    <div class="number-display">"Loading..."</div>
                 </div>
-                <div class="chart-container">
-                <p class="chart-title">Dissolved Oxygen</p>
-                <p>"Loading..."</p>
+                <div class="chart-container-small">
+                    <div class="number-label">"pH"</div>
+                    <div class="number-display">"Loading..."</div>
                 </div>
-                <div class="chart-container">
-                <p class="chart-title">Turbidity</p>
-                <p>"Loading..."</p>
+                <div class="chart-container-small">
+                    <div class="number-label">"Oxygen Dissolved %"</div>
+                    <div class="number-display">"Loading..."</div>
                 </div>
-                <div class="chart-container">
-                <p class="chart-title">Conductivity</p>
-                <p>"Loading..."</p>
+                <div class="chart-container-small">
+                    <div class="number-label">"Oxygen Dissolved (ppm)"</div>
+                    <div class="number-display">"Loading..."</div>
                 </div>
-                <div class="chart-container">
-                <p class="chart-title">Depth</p>
-                <p>"Loading..."</p>
+                <div class="chart-container-small">
+                    <div class="number-label">"COG"</div>
+                    <div class="number-display">"Loading"</div>
                 </div>
-                <div class="chart-container">
-                <p class="chart-title">Flow Rate</p>
-                <p>"Loading..."</p>
+                <div class="chart-container-small">
+                    <div class="number-label">"SOG"</div>
+                    <div class="number-display">"Loading"</div>
                 </div>
             }>
             {move || {
-                let status = data.get();
-                match &status {
-                    Some(wrapper) => match wrapper.as_ref() {
-                        Some(dt) => view! {
-                            <div class="chart-container">
-                            <p class="chart-title">"Temperature"</p>
-                            <p>{dt.temperature.unwrap().to_string()}</p>
+                if let Some(dt) = data.get() {
+                    if let (Some(ph), Some(temperature), Some(pressure), Some(conductivity), Some(salinity), Some(oxygen_perc), Some(oxygen_ppm),
+                            Some(cog), Some(sog)) = (dt.ph, dt.temperature, dt.pressure, dt.conductivity, dt.salinity, dt.oxygen_perc, dt.oxygen_ppm, dt.cog, dt.sog)
+                        {
+                            view! {
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Temperature"</div>
+                                    <div class="number-display">{temperature.to_string()+ " °C"}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Pressure"</div>
+                                    <div class="number-display">{pressure.to_string() + " dbar"}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Conductivity"</div>
+                                    <div class="number-display">{conductivity.to_string()+ " mS/cm"}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Salinity"</div>
+                                    <div class="number-display">{salinity.to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"pH"</div>
+                                    <div class="number-display">{ph.to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Oxygen Dissolved %"</div>
+                                    <div class="number-display">{oxygen_perc.to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Oxygen Dissolved (ppm)"</div>
+                                    <div class="number-display">{oxygen_ppm.to_string() + " mg/l"}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"COG"</div>
+                                    <div class="number-display">{cog.to_string() + "°"}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"SOG"</div>
+                                    <div class="number-display">{sog.to_string() + " m/s"}</div>
+                                </div>
+                            }
+                        } else {
+                            view! {
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Temperature"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Pressure"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Conductivity"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Salinity"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"pH"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Oxygen Dissolved %"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Oxygen Dissolved (ppm)"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"COG"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"SOG"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                            }
+                        }
+                    } else {
+                        view! {
+                            <div class="chart-container-small">
+                                <div class="number-label">"Temperature"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
                             </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Pressure"</p>
-                            <p>{dt.pressure.unwrap().to_string()}</p>
+                            <div class="chart-container-small">
+                                <div class="number-label">"Pressure"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
                             </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Conductivity"</p>
-                            <p>{dt.conductivity.unwrap().to_string()}</p>
+                            <div class="chart-container-small">
+                                <div class="number-label">"Conductivity"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
                             </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Salinity"</p>
-                            <p>{dt.salinity.unwrap().to_string()}</p>
+                            <div class="chart-container-small">
+                                <div class="number-label">"Salinity"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
                             </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"pH"</p>
-                            <p>{dt.ph.unwrap().to_string()}</p>
+                            <div class="chart-container-small">
+                                <div class="number-label">"pH"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
                             </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Oxygen Dissolved %"</p>
-                            <p>{dt.oxygen_perc.unwrap().to_string()}</p>
+                            <div class="chart-container-small">
+                                <div class="number-label">"Oxygen Dissolved %"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
                             </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Oxygen Dissolved (ppm)"</p>
-                            <p>{dt.oxygen_ppm.unwrap().to_string()}</p>
+                            <div class="chart-container-small">
+                                <div class="number-label">"Oxygen Dissolved (ppm)"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
                             </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"COG"</p>
-                            <p>{dt.cog.unwrap().to_string()}</p>
+                            <div class="chart-container-small">
+                                <div class="number-label">"COG"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
                             </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"SOG"</p>
-                            <p>{dt.sog.unwrap().to_string()}</p>
-                            </div>
-                        },
-                        None => view! {
-                            <div class="chart-container">
-                            <p class="chart-title">"Temperature"</p>
-                            <p>{"N/A".to_string()}</p>
-                            </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Pressure"</p>
-                            <p>{"N/A".to_string()}</p>
-                            </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Conductivity"</p>
-                            <p>{"N/A".to_string()}</p>
-                            </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Salinity"</p>
-                            <p>{"N/A".to_string()}</p>
-                            </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"pH"</p>
-                            <p>{"N/A".to_string()}</p>
-                            </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Oxygen Dissolved %"</p>
-                            <p>{"N/A".to_string()}</p>
-                            </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"Oxygen Dissolved (ppm)"</p>
-                            <p>{"N/A".to_string()}</p>
-                            </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"COG"</p>
-                            <p>{"N/A".to_string()}</p>
-                            </div>
-                            <div class="chart-container">
-                            <p class="chart-title">"SOG"</p>
-                            <p>{"N/A".to_string()}</p>
+                            <div class="chart-container-small">
+                                <div class="number-label">"SOG"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
                             </div>
                         }
-                    },
-                    None => view! {
-                        <div class="chart-container">
-                        <p class="chart-title">"Temperature"</p>
-                        <p>{"N/A".to_string()}</p>
-                        </div>
-                        <div class="chart-container">
-                        <p class="chart-title">"Pressure"</p>
-                        <p>{"N/A".to_string()}</p>
-                        </div>
-                        <div class="chart-container">
-                        <p class="chart-title">"Conductivity"</p>
-                        <p>{"N/A".to_string()}</p>
-                        </div>
-                        <div class="chart-container">
-                        <p class="chart-title">"Salinity"</p>
-                        <p>{"N/A".to_string()}</p>
-                        </div>
-                        <div class="chart-container">
-                        <p class="chart-title">"pH"</p>
-                        <p>{"N/A".to_string()}</p>
-                        </div>
-                        <div class="chart-container">
-                        <p class="chart-title">"Oxygen Dissolved %"</p>
-                        <p>{"N/A".to_string()}</p>
-                        </div>
-                        <div class="chart-container">
-                        <p class="chart-title">"Oxygen Dissolved (ppm)"</p>
-                        <p>{"N/A".to_string()}</p>
-                        </div>
-                        <div class="chart-container">
-                        <p class="chart-title">"COG"</p>
-                        <p>{"N/A".to_string()}</p>
-                        </div>
-                        <div class="chart-container">
-                        <p class="chart-title">"SOG"</p>
-                        <p>{"N/A".to_string()}</p>
-                        </div>
                     }
-                }
-            }}
+                }}
             </Suspense>
         </div>
     }

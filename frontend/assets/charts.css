@@ -457,3 +457,64 @@ details p {
       flex: 1;
     }
 }
+
+.chart-container-small {
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    width: 100%; /* Fill the grid cell */
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-family: Arial, sans-serif;
+
+}
+
+/* Dedicated grid for number displays */
+.numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 200px); /* Fixed 3 columns at 200px each */
+    gap: 1rem;
+    justify-content: center; /* Center the entire grid */
+    padding: 1rem;
+    margin: 0 auto;
+    width: fit-content; /* Grid only as wide as needed */
+}
+
+.chart-container-small .number-display {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0.25rem 0;
+    font-family: Arial, sans-serif;
+
+}
+
+.chart-container-small .number-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+    font-weight: 500;
+    font-family: Arial, sans-serif;
+}
+
+@media (max-width: 700px) {
+    .numbers-grid {
+        grid-template-columns: repeat(2, 180px); /* 2 columns, slightly smaller */
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 450px) {
+    .numbers-grid {
+        grid-template-columns: 180px; /* 1 column for very small screens */
+    }
+    
+    .chart-container-small {
+        padding: 0.75rem;
+    }
+}
