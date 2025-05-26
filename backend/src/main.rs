@@ -418,7 +418,7 @@ async fn query_latest_data() -> Result<Json<RTDataPoint>, StatusCode>{
     let ts_query = format!(
         r#"from(bucket: "asv_data")
             |> range(start: -10s) 
-            |> filter(fn: (r) => (r._measurement == "idronaut_data" or r._measurement == "gps_data2))
+            |> filter(fn: (r) => (r._measurement == "idronaut_data" or r._measurement == "gps_data2"))
             |> last()"#
     );
     println!("Query RTD:\n{}", ts_query);
@@ -455,7 +455,7 @@ async fn query_latest_data() -> Result<Json<RTDataPoint>, StatusCode>{
                         rtd.salinity = Some(parsed_value);
                     } else if field == "conductivity"{
                         rtd.conductivity = Some(parsed_value);
-                    } else if field == "oxygen_perc"{
+                    } else if field == "oxygen_percentage"{
                         rtd.oxygen_perc = Some(parsed_value);
                     } else if field == "oxygen_ppm"{
                         rtd.oxygen_ppm = Some(parsed_value);
