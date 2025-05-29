@@ -115,6 +115,18 @@ fn RTData() -> impl IntoView{
         <div class="numbers-grid">
             <Suspense fallback=move || view! {
                 <div class="chart-container-small">
+                    <div class="number-label">"Latitude"</div>
+                    <div class="number-display">"Loading..."</div>
+                </div>
+                <div class="chart-container-small">
+                    <div class="number-label">"Longitude"</div>
+                    <div class="number-display">"Loading..."</div>
+                </div>
+                <div class="chart-container-small">
+                    <div class="number-label">"Depth"</div>
+                    <div class="number-display">"Loading..."</div>
+                </div>
+                <div class="chart-container-small">
                     <div class="number-label">"Temperature"</div>
                     <div class="number-display">"Loading..."</div>
                 </div>
@@ -154,9 +166,21 @@ fn RTData() -> impl IntoView{
             {move || {
                 if let Some(dt) = data.get() {
                     if let (Some(ph), Some(temperature), Some(pressure), Some(conductivity), Some(salinity), Some(oxygen_perc), Some(oxygen_ppm),
-                            Some(cog), Some(sog)) = (dt.ph, dt.temperature, dt.pressure, dt.conductivity, dt.salinity, dt.oxygen_perc, dt.oxygen_ppm, dt.cog, dt.sog)
+                            Some(cog), Some(sog), Some(latitude), Some(longitude), Some(depth)) = (dt.ph, dt.temperature, dt.pressure, dt.conductivity, dt.salinity, dt.oxygen_perc, dt.oxygen_ppm, dt.cog, dt.sog, dt.latitude, dt.longitude, dt.depth)
                         {
                             view! {
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Latitude"</div>
+                                    <div class="number-display">{latitude.to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Longitude"</div>
+                                    <div class="number-display">{longitude.to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Depth"</div>
+                                    <div class="number-display">{depth.to_string()+ " m"}</div>
+                                </div>
                                 <div class="chart-container-small">
                                     <div class="number-label">"Temperature"</div>
                                     <div class="number-display">{temperature.to_string()+ " °C"}</div>
@@ -197,6 +221,18 @@ fn RTData() -> impl IntoView{
                         } else {
                             view! {
                                 <div class="chart-container-small">
+                                    <div class="number-label">"Latitude"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Longitude"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
+                                    <div class="number-label">"Depth"</div>
+                                    <div class="number-display">{"N/A".to_string()}</div>
+                                </div>
+                                <div class="chart-container-small">
                                     <div class="number-label">"Temperature"</div>
                                     <div class="number-display">{"N/A".to_string()}</div>
                                 </div>
@@ -236,6 +272,18 @@ fn RTData() -> impl IntoView{
                         }
                     } else {
                         view! {
+                            <div class="chart-container-small">
+                                <div class="number-label">"Latitude"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
+                            </div>
+                            <div class="chart-container-small">
+                                <div class="number-label">"Longitude"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
+                            </div>
+                            <div class="chart-container-small">
+                                <div class="number-label">"Depth"</div>
+                                <div class="number-display">{"N/A".to_string()}</div>
+                            </div>
                             <div class="chart-container-small">
                                 <div class="number-label">"Temperature"</div>
                                 <div class="number-display">{"N/A".to_string()}</div>

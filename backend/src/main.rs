@@ -56,6 +56,9 @@ pub struct RTDataPoint {
     pub oxygen_ppm: Option<f64>,
     pub cog: Option<f64>,
     pub sog: Option<f64>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub depth: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -440,6 +443,9 @@ async fn query_latest_data() -> Result<Json<RTDataPoint>, StatusCode>{
         oxygen_ppm: None,
         cog: None,
         sog: None,
+        latitude: None,
+        longitude: None,
+        depth: None,
     };
     for result in reader.records() {
         if let Ok(record) = result {
@@ -463,6 +469,12 @@ async fn query_latest_data() -> Result<Json<RTDataPoint>, StatusCode>{
                         rtd.cog = Some(parsed_value);
                     }  else if field == "sog"{
                         rtd.sog = Some(parsed_value);
+                    }  else if field == "latitude"{
+                        rtd.latitude = Some(parsed_value);
+                    }  else if field == "longitude"{
+                        rtd.longitude = Some(parsed_value);
+                    }  else if field == "depth"{
+                        rtd.depth = Some(parsed_value);
                     }
                 }
             }

@@ -49,6 +49,9 @@ pub struct RTDataPoint {
     pub oxygen_ppm: Option<f64>,
     pub cog: Option<f64>,
     pub sog: Option<f64>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub depth: Option<f64>,
 }
 
 pub fn data_page() -> impl IntoView {
