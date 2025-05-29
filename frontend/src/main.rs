@@ -104,9 +104,9 @@ fn RTData() -> impl IntoView{
             match client.get(concatcp!(BASEURL, "/api/latest_data")).send().await {
                 Ok(response) => match response.json::<datavis::RTDataPoint>().await {
                     Ok(data) => data,
-                    Err(_) => RTDataPoint{ph: None, temperature: None, conductivity: None, salinity: None, pressure: None, oxygen_perc: None, oxygen_ppm: None, cog: None, sog: None},
+                    Err(_) => RTDataPoint{ph: None, temperature: None, conductivity: None, salinity: None, pressure: None, oxygen_perc: None, oxygen_ppm: None, cog: None, sog: None, latitude: None, longitude: None, depth: None},
                 },
-                Err(_) => RTDataPoint{ph: None, temperature: None, conductivity: None, salinity: None, pressure: None, oxygen_perc: None, oxygen_ppm: None, cog: None, sog: None},
+                Err(_) => RTDataPoint{ph: None, temperature: None, conductivity: None, salinity: None, pressure: None, oxygen_perc: None, oxygen_ppm: None, cog: None, sog: None, latitude: None, longitude: None, depth: None},
             }
         }
     });

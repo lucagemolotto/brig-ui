@@ -231,9 +231,9 @@ pub fn ImageFetch() -> impl IntoView {
                         <p><strong>"Last Capture Preview:"</strong></p>
                         <p>"Blue Band 1 (444±28)" </p>
                         <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam2&band=1" alt="Last Capture" style="max-width: 500px;" />
-                        <p>"Blue Band 2 (560±14)" </p>
+                        <p>"Blue Band 2 (531±14)" </p>
                         <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam2&band=2" alt="Last Capture" style="max-width: 500px;" />
-                        <p>"Blue Band 3 (668±16)" </p>
+                        <p>"Blue Band 3 (650±16)" </p>
                         <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam2&band=3" alt="Last Capture" style="max-width: 500px;" />
                         <p>"Blue Band 4 (705±10)" </p>
                         <img src="http://192.168.2.9:3000/api/get_last_capture?cam=cam2&band=4" alt="Last Capture" style="max-width: 500px;" />
