@@ -524,36 +524,36 @@ pub fn Charts() -> impl IntoView {
     // temperature
     let temp_series = Series::new(|p: &DataPoint| {
         p.time.parse::<DateTime<Utc>>().unwrap()})
-    .line(Line::new(|p: &DataPoint| p.value).with_name("Temperature"));
+    .line(Line::new(|p: &DataPoint| p.value).with_interpolation(Interpolation::Linear).with_name("Temperature"));
 
     // pressure
     let press_series = Series::new(|p: &DataPoint| {
         p.time.parse::<DateTime<Utc>>().unwrap()})
-    .line(Line::new(|p: &DataPoint| p.value).with_name("Pressure")); 
+    .line(Line::new(|p: &DataPoint| p.value).with_interpolation(Interpolation::Linear).with_name("Pressure")); 
 
     // oxygen ppm
     let oxppm_series = Series::new(|p: &DataPoint| {
         p.time.parse::<DateTime<Utc>>().unwrap()})
-    .line(Line::new(|p: &DataPoint| p.value).with_name("Oxygen (ppm)"));
+    .line(Line::new(|p: &DataPoint| p.value).with_interpolation(Interpolation::Linear).with_name("Oxygen (ppm)"));
 
     // oxygen %
     let oxperc_series = Series::new(|p: &DataPoint| {
         p.time.parse::<DateTime<Utc>>().unwrap()})
-    .line(Line::new(|p: &DataPoint| p.value).with_name("Oxygen (percentage)"));
+    .line(Line::new(|p: &DataPoint| p.value).with_interpolation(Interpolation::Linear).with_name("Oxygen (percentage)"));
 
     // conductivity
     let cond_series = Series::new(|p: &DataPoint| {
         p.time.parse::<DateTime<Utc>>().unwrap()})
-    .line(Line::new(|p: &DataPoint| p.value).with_name("Conductivity"));
+    .line(Line::new(|p: &DataPoint| p.value).with_interpolation(Interpolation::Linear).with_name("Conductivity"));
 
     // salinity
     let sal_series = Series::new(|p: &DataPoint| {
         p.time.parse::<DateTime<Utc>>().unwrap()})
-    .line(Line::new(|p: &DataPoint| p.value).with_name("Salinity"));
+    .line(Line::new(|p: &DataPoint| p.value).with_interpolation(Interpolation::Linear).with_name("Salinity"));
 
     let ph_series = Series::new(|p: &DataPoint| {
         p.time.parse::<DateTime<Utc>>().unwrap()})
-    .line(Line::new(|p: &DataPoint| p.value).with_name("pH"));
+    .line(Line::new(|p: &DataPoint| p.value).with_interpolation(Interpolation::Linear).with_name("pH"));
 
     view! {
         <h2>"CTD Data"</h2>
