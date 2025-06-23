@@ -24,5 +24,7 @@ then upload to the ASV via scp:
 
 to load it and run on the actual machine:
 
-```sudo docker load -i ./YOUR_FOLDER_PATH/brig_container_rpi_RELEASEVERSION.tar
-sudo docker run -d --network="host" --restart unless-stopped --name brig-ui brig-ui_rpi```
+```
+sudo docker load -i ./YOUR_FOLDER_PATH/brig_container_rpi_RELEASEVERSION.tar
+sudo docker run -d --network="host" --restart unless-stopped --name brig-ui brig-ui_rpi
+```
