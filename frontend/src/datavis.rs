@@ -60,7 +60,10 @@ pub fn data_page() -> impl IntoView {
         <ImageData/>
     }
 }
-
+/* 
+This component lets a user download the CSV data of the Brigantine ASV.
+The user selects a time range and then a call is done to the backend, which will query the database and responde with a CSV file.
+*/
 #[component]
 pub fn CsvDownload() -> impl IntoView {
     let start_time = RwSignal::new(String::new());
@@ -158,6 +161,9 @@ pub fn CsvDownload() -> impl IntoView {
     }
 }
 
+/* 
+This component couples a micasense image with the CTD and GPS data.
+*/
 #[component]
 pub fn ImageData() -> impl IntoView {
 

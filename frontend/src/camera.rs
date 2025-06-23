@@ -5,11 +5,15 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use leptos::task::spawn_local;
 
+/*
+Camera utilities and info visualization
+ */
+
 pub fn camera_page() -> impl IntoView {
     view! {
-        <CameraStatus/>
-        <Reformat/>
-        <ImageFetch/>
+        <CameraStatus/> // Status of the cameras (space available)
+        <Reformat/> // Window for reformatting SD cards
+        <ImageFetch/> // Fetcher of latest capture
     }
 }
 #[derive(Serialize, Clone, Deserialize, Debug)]
@@ -20,6 +24,11 @@ struct CameraSpace {
     cam2_total: f64,
 }
 
+
+/* 
+This component handles the status of the micasense cameras,
+it simply uses the RedEdge APIs to fetch the total and the free space and shows it.
+*/
 #[component]
 pub fn CameraStatus() -> impl IntoView {
     let status_message = RwSignal::new(String::new());
@@ -27,6 +36,7 @@ pub fn CameraStatus() -> impl IntoView {
     let fetched = RwSignal::new(false); // for running once
     let client = Client::new();
 
+    // Effect for the asynchronous HTTP API call
     Effect::new(move |_| {
         if fetched.get() {
             return;
@@ -76,6 +86,10 @@ pub fn CameraStatus() -> impl IntoView {
     }
 }
 
+/* 
+This component handles the reformatting of the micasense cameras,
+using the RedEdge HTTP APIs.
+*/
 #[component]
 pub fn Reformat() -> impl IntoView {    
     // Create a signal for storing fetch results
@@ -176,6 +190,10 @@ pub fn Reformat() -> impl IntoView {
     }
 }
 
+/* 
+This component fetches the images of the latest capture.
+It does this by simply calling get_last_capture on the backend, which handles basically everything.
+*/
 #[component]
 pub fn ImageFetch() -> impl IntoView {
     let last_capture_image = RwSignal::new(None::<String>);
